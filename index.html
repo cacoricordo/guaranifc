@@ -1,27 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <title>OS INVICTOS -- Soccer-Tool'Guarani FC'</title>
+    <meta charset="UTF-8">
+    <title>OS INVICTOS -- Campo Tático Interativo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://www.osinvictos.com.br/">
-    <meta property="og:title" content="Guarani FC vs A.I."/>
-    <meta property="og:description" content="Campeão Invicto '25 #Futebol de 7"/>
-    <meta property="og:image" content="https://guaranifc.onrender.com/img/trofeujoia.png"/>
-    <meta property="og:image:width" content="580"/>
-    <meta property="og:image:height" content="464"/>
+    <meta property="og:title" content="CAMPO TÁTICO — DOS CAMPEÕES INVICTOS">
+    <meta property="og:description" content="Os maiores campeões invictos do futebol mundial">
+    <meta property="og:image" content="https://www.osinvictos.com.br/assets/guaranifc-previa.png">
     <link rel="stylesheet" href="styles.css">
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZDWS2F3NE8"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body style="
+  background-image: url('img/estadium.jpg');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-attachment: fixed;
+">
 
-      gtag('config', 'G-ZDWS2F3NE8');
-    </script>
-    </head>
-<body style="background-image: url('https://guaranifc.onrender.com/img/estadium.jpg'); background-size: cover; background-repeat: no-repeat; background-position: center;">
+  <!-- ===== Campo Tático ===== -->
     <div id="background-square" class="background-square"></div>
     <div id="background-line"></div>
     <div id="background-line2"></div>
@@ -40,506 +37,582 @@
     <div id="background-line15"></div>
     <div id="background-line16"></div>
     <div id="background-line17"></div>
-<div id="circle12" class="circlecentral" style="
-    background: transparent;
-    left: 237px;
-    top: 100px;
-    border: 2px solid #ffffff;
-    color: #ffffff;
-"></div>
-    <div id="gol-square" class="gol-square"></div>
-    <div id="gol2-square" class="gol2-square"></div>
-    <div id="circle1" class="circle">1</div>
-    <div id="circle2" class="circle">2</div>
-    <div id="circle3" class="circle">3</div>
-    <div id="circle4" class="circle">4</div>
-    <div id="circle5" class="circle">5</div>
-    <div id="circle6" class="circle">6</div>
-    <div id="circle7" class="circle">7</div>
-    <div id="circle8" class="circle">8</div>
-    <div id="circle9" class="circle">9</div>
-    <div id="circle10" class="circle">10</div>
-    <div id="circle11" class="circle">11</div>
-    <div id="circle13" class="circle" style="background: #ff3333;">11</div>
-    <div id="circle14" class="circle" style="background: #ff3333;">2</div>
-    <div id="circle15" class="circle" style="background: #ff3333;">3</div>
-    <div id="circle16" class="circle" style="background: #ff3333;">4</div>
-    <div id="circle17" class="circle" style="background: #ff3333;">5</div>
-    <div id="circle18" class="circle" style="background: #ff3333;">6</div>
-    <div id="circle19" class="circle" style="background: #ff3333;">7</div>
-    <div id="circle20" class="circle" style="background: #ff3333;">8</div>
-    <div id="circle21" class="circle" style="background: #ff3333;">9</div>
-    <div id="circle22" class="circle" style="background: #ff3333;">10</div>
-    <div id="circle23" class="circle">01</div>
-    <div id="circle24" class="circle"></div>
-    <div id="fullscreen-overlay" style="
-        position: fixed; left:0; top:0; width:100vw; height:100vh; 
-        background: rgba(0,0,0,0.7); color: #fff; 
-        display: flex; align-items: center; justify-content: center; 
-        z-index: 9999; font-size: 2em; cursor: pointer;">
-        Toque para entrar na Mesa Tática
-    </div>
+  <div id="circle12" class="circlecentral" style="background:transparent;left:237px;top:100px;border:2px solid #fff;"></div>
+  <div id="gol-square" class="gol-square"></div>
+  <div id="gol2-square" class="gol2-square"></div>
 
-<!-- Exit fullscreen button -->
-    <button id="exit-fullscreen-btn" style="
-        position: fixed;
-        top: 330px; left: 20px;
-        z-index: 10000;
-        font-size: 1.2em;
-        padding: 10px 18px;
-        border-radius: 8px;
-        background: #222; color: #fff;
-        border: none;
-        cursor: pointer;
-        display: none;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    ">Sair (x)</button>
-<button id="pen-path-btn" style="
-    position: fixed;
-    top: 330px; left: 302px;
-    z-index: 10000;
-    font-size: 1.2em;
-    padding: 10px 18px;
-    border-radius: 8px;
-    background: #222; color: #fff;
-    border: none;
-    cursor: pointer;
-    display: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-">✎ Desenho Tático</button>
-<button id="ai-analise-btn" style="
-    position: fixed;
-    top: 330px; left: 120px;
-    z-index: 10000;
-    font-size: 1.2em;
-    padding: 10px 18px;
-    border-radius: 8px;
-    background: #33aaff; color: #fff;
-    border: none;
-    cursor: pointer;
-    display: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-">AI Análise</button>
-<canvas id="trace-canvas" width="600" height="300" style="
-    position:absolute;
-    left:20px; top:20px;
-    z-index: 10;
-    pointer-events: none;
-    border-radius:8px;
-    background:transparent;
-    display: block;
-"></canvas>
-<div id="ai-notification" style="
-    display:none;
-    position:fixed;
-    bottom:40px; left:50%; transform:translateX(-50%);
-    background:#33aaff;
-    color:#fff; padding:18px 32px; border-radius:8px; z-index:10001;
-    font-size:1.3em; box-shadow:0 2px 10px rgba(0,0,0,0.18);
-"></div>
+  <!-- Jogadores e time adversário (IDs originais mantidos) -->
+  <div id="circle1" class="circle">1</div>
+  <div id="circle2" class="circle">2</div>
+  <div id="circle3" class="circle">3</div>
+  <div id="circle4" class="circle">4</div>
+  <div id="circle5" class="circle">5</div>
+  <div id="circle6" class="circle">6</div>
+  <div id="circle7" class="circle">7</div>
+  <div id="circle8" class="circle">8</div>
+  <div id="circle9" class="circle">9</div>
+  <div id="circle10" class="circle">10</div>
+  <div id="circle11" class="circle">11</div>
+
+  <div id="circle13" class="circle" style="background:#33FFCC;">11</div>
+  <div id="circle14" class="circle" style="background:#33FFCC;">2</div>
+  <div id="circle15" class="circle" style="background:#33FFCC;">3</div>
+  <div id="circle16" class="circle" style="background:#33FFCC;">4</div>
+  <div id="circle17" class="circle" style="background:#33FFCC;">5</div>
+  <div id="circle18" class="circle" style="background:#33FFCC;">6</div>
+  <div id="circle19" class="circle" style="background:#33FFCC;">7</div>
+  <div id="circle20" class="circle" style="background:#33FFCC;">8</div>
+  <div id="circle21" class="circle" style="background:#33FFCC;">9</div>
+  <div id="circle22" class="circle" style="background:#33FFCC;">10</div>
+  <div id="circle23" class="circle">01</div>
+  <div id="circle24" class="circle"></div>
+
+  <canvas id="trace-canvas" width="600" height="300"
+   style="position:absolute;left:20px;top:20px;z-index:10;border-radius:8px;background:transparent;"></canvas>
+
+  <div id="ai-notification" style="display:none;position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:#33aaff;color:#fff;padding:18px 32px;border-radius:8px;z-index:10001;font-size:1.1em;box-shadow:0 2px 10px rgba(0,0,0,0.18);"></div>
+
+  <!-- Botões -->
+  <div id="fullscreen-overlay" style="position:fixed;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);color:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;font-size:2em;cursor:pointer;z-index:10055">
+    Toque para entrar na Mesa Tática
+  </div>
+
+  <button id="exit-fullscreen-btn" style="position:fixed;top:330px;left:20px;z-index:10000;">Sair (x)</button>
+  <button id="ai-analise-btn" style="position:fixed;top:330px;left:120px;z-index:10000;">Análise IA</button>
+  <button id="pen-path-btn" style="position:fixed;top:330px;left:302px;z-index:10000;">✎ Desenho Tático</button>
+
 <script>
-  // Enter Fullscreen
-  document.getElementById('fullscreen-overlay').addEventListener('click', async function() {
-      const el = document.documentElement;
-      // Try fullscreen
-      if (el.requestFullscreen) {
-          await el.requestFullscreen();
-      } else if (el.webkitRequestFullscreen) { /* Safari */
-          await el.webkitRequestFullscreen();
-      } else if (el.msRequestFullscreen) { /* IE11 */
-          await el.msRequestFullscreen();
-      }
-      // Attempt to lock orientation to landscape
-      if (screen.orientation && screen.orientation.lock) {
-          try {
-              await screen.orientation.lock('landscape');
-          } catch (e) {
-              // Some browsers might not support or allow it
-          }
-      }
-      document.getElementById('fullscreen-overlay').style.display = 'none';
-      // Ensure buttons update after entering fullscreen
-      updateExitButton();
-      updatePenPathButton();
-      updateAIButton();
+
+const SERVER_URL = window.location.origin;
+
+/* ===== CORE: movimento, socket e AI analyze ===== */
+const socket = io("https://guaranifc.onrender.com", {
+  transports: ["websocket", "polling"]
+});
+window.socket = socket;
+
+const circles = {};
+const dragState = {};
+let activeId = null;
+
+for (let i = 1; i <= 24; i++) {
+  const el = document.getElementById("circle" + i);
+  circles[i] = el;
+  dragState[i] = { dragging: false, offsetX: 0, offsetY: 0 };
+  if (!el) continue;
+  el.style.position = el.style.position || 'absolute';
+  el.style.zIndex = '20';
+
+  el.addEventListener("mousedown", (e) => {
+    dragState[i].dragging = true;
+    dragState[i].offsetX = e.offsetX;
+    dragState[i].offsetY = e.offsetY;
+    activeId = i;
   });
 
-  // Show/hide exit button on fullscreen change
-  function updateExitButton() {
-      const btn = document.getElementById('exit-fullscreen-btn');
-      if (
-          document.fullscreenElement ||
-          document.webkitFullscreenElement ||
-          document.msFullscreenElement
-      ) {
-          btn.style.display = 'block';
-      } else {
-          btn.style.display = 'none';
-      }
+  el.addEventListener("touchstart", (e) => {
+    const touch = e.touches[0];
+    const rect = el.getBoundingClientRect();
+    dragState[i].dragging = true;
+    dragState[i].offsetX = touch.clientX - rect.left;
+    dragState[i].offsetY = touch.clientY - rect.top;
+    activeId = i;
+    e.preventDefault();
+  }, { passive: false });
+}
+
+function moveElement(id, x, y) {
+  const el = circles[id];
+  if (el) {
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+  }
+}
+
+document.addEventListener("mousemove", (e) => {
+  if (!activeId) return;
+  const i = activeId;
+  const x = e.clientX - dragState[i].offsetX;
+  const y = e.clientY - dragState[i].offsetY;
+  moveElement(i, x, y);
+  socket.emit("move_circle", { id: i, left: x, top: y });
+});
+
+document.addEventListener("touchmove", (e) => {
+  if (!activeId) return;
+  const i = activeId;
+  const touch = e.touches[0];
+  const rect = circles[i].getBoundingClientRect();
+  const x = touch.clientX - dragState[i].offsetX;
+  const y = touch.clientY - dragState[i].offsetY;
+  moveElement(i, x, y);
+  socket.emit("move_circle", { id: i, left: x, top: y });
+  e.preventDefault();
+}, { passive: false });
+
+function endDrag() {
+  if (activeId) {
+    dragState[activeId].dragging = false;
+    activeId = null;
+  }
+}
+document.addEventListener("mouseup", endDrag);
+document.addEventListener("touchend", endDrag);
+
+socket.on("update_circle", (data) => {
+  // data has {id, left, top}
+  const el = document.getElementById('circle' + data.id);
+  if (el) {
+    el.style.left = (data.left) + 'px';
+    el.style.top = (data.top) + 'px';
+  }
+});
+
+/* ===== AI Análise: envia posições reais do adversário ===== */
+function collectGreenPositions() {
+  // prefer IDs 13..22 (your green team). fallback to 2..11
+  const idsPrimary = Array.from({length:10}, (_,i)=>2+i); // 2..11
+  const idsFallback = Array.from({length:10}, (_,i)=>2+i); // 2..11
+  let arr = [];
+  for (const id of idsPrimary) {
+    const el = document.getElementById('circle' + id);
+    if (!el) { arr = []; break; }
+    arr.push({ id, left: parseInt(el.style.left || el.offsetLeft), top: parseInt(el.style.top || el.offsetTop) });
+  }
+  if (arr.length === 0) {
+    for (const id of idsFallback) {
+      const el = document.getElementById('circle' + id);
+      if (!el) continue;
+      arr.push({ id, left: parseInt(el.style.left || el.offsetLeft), top: parseInt(el.style.top || el.offsetTop) });
+    }
+  }
+  return arr;
+}
+
+function getBall() {
+  const el = document.getElementById('circle24');
+  return { left: parseInt(el.style.left || el.offsetLeft), top: parseInt(el.style.top || el.offsetTop) };
+}
+
+function setPositions(red) {
+  const canvas = document.getElementById("trace-canvas");
+  const ctx = canvas.getContext("2d");
+
+  for (const p of red) {
+    const el = document.getElementById('circle' + p.id);
+    if (!el) continue;
+
+    // Posição inicial
+    const startX = parseInt(el.style.left || el.offsetLeft);
+    const startY = parseInt(el.style.top || el.offsetTop);
+
+    const endX = p.left;
+    const endY = p.top;
+
+    // === Desenha linha de deslocamento (trail tático) ===
+    ctx.beginPath();
+    ctx.moveTo(startX + 20, startY + 20); // leve offset central do círculo
+    ctx.lineTo(endX + 20, endY + 20);
+    ctx.strokeStyle = "rgba(255, 51, 51, 0.6)";
+    ctx.lineWidth = 2;
+    ctx.shadowColor = "rgba(255, 51, 51, 0.4)";
+    ctx.shadowBlur = 4;
+    ctx.stroke();
+    ctx.closePath();
+
+    // Limpa o rastro após 1 segundo (efeito transitório)
+    setTimeout(() => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }, 1000);
+
+    // === Anima movimento do jogador ===
+    el.style.transition = "all 1s cubic-bezier(0.25, 0.8, 0.25, 1)";
+    el.style.opacity = "0.7";
+
+    requestAnimationFrame(() => {
+      el.style.left = endX + "px";
+      el.style.top = endY + "px";
+    });
+
+    setTimeout(() => {
+      el.style.opacity = "1";
+    }, 1000);
+  }
+}
+
+
+function updateTacticalStatus(info) {
+  const panel = document.getElementById('tactical-status');
+  if (!panel) return;
+
+  // Limpa painel se não houver info
+  if (!info) {
+    panel.style.display = 'none';
+    return;
   }
 
-  document.addEventListener('fullscreenchange', updateExitButton);
-  document.addEventListener('webkitfullscreenchange', updateExitButton);
-  document.addEventListener('msfullscreenchange', updateExitButton);
+  const { detectedFormation, phase, red } = info;
 
-  // Exit Fullscreen function
-  document.getElementById('exit-fullscreen-btn').addEventListener('click', async function() {
-      if (document.exitFullscreen) {
-          await document.exitFullscreen();
-      } else if (document.webkitExitFullscreen) { /* Safari */
-          await document.webkitExitFullscreen();
-      } else if (document.msExitFullscreen) { /* IE11 */
-          await document.msExitFullscreen();
-      }
-      // Optionally unlock orientation if supported
-      if (screen.orientation && screen.orientation.unlock) {
-          try {
-              await screen.orientation.unlock();
-          } catch (e) {}
-      }
-      // Ensure buttons update after exiting fullscreen
-      updateExitButton();
-      updatePenPathButton();
-      updateAIButton();
+  // === Conteúdo do painel com botão de fechar ===
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <strong>📊 Situação Tática</strong>
+      <button id="close-tactical-panel"
+        style="
+          background:transparent;
+          border:none;
+          color:#fff;
+          font-size:16px;
+          font-weight:bold;
+          cursor:pointer;
+          margin-left:8px;
+        "
+        title="Fechar painel">×</button>
+    </div>
+    <hr style="border:0;border-top:1px solid rgba(255,255,255,0.2);margin:6px 0;">
+    <b>📋 Tática:</b> ${detectedFormation || '---'}<br>
+    <b>🧭 Fase:</b> ${phase || '---'}<br>
+    <b>⚫ Jogadores:</b> ${(red && red.length) || 0}
+  `;
+
+  panel.style.display = 'block';
+
+  // === Evento do botão de fechar ===
+  const closeBtn = document.getElementById('close-tactical-panel');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      panel.style.opacity = '0';
+      setTimeout(() => {
+        panel.style.display = 'none';
+        panel.style.opacity = '1';
+      }, 300);
+    });
+  }
+}
+
+
+function showNotification(msg, bg="#33aaff"){
+  const n = document.getElementById('ai-notification');
+  n.textContent = msg;
+  n.style.background = bg;
+  n.style.display = 'block';
+  n.style.opacity = '1';
+  setTimeout(()=>{ n.style.opacity = '0'; }, 9500);
+  setTimeout(()=>{ n.style.display = 'none'; }, 10500);
+}
+
+document.getElementById('ai-analise-btn').addEventListener('click', async function(){
+  const btn = this;
+  btn.disabled = true;
+  btn.textContent = 'Analisando... ⚙️';
+
+  try {
+    const green = collectGreenPositions();
+    const ball = getBall();
+
+    const res = await fetch(`https://guaranifc.onrender.com/ai/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ green, ball })
+    });
+
+    if (!res.ok) throw new Error(`Server returned ${res.status}`);
+
+    const data = await res.json();
+
+    // ✅ Atualiza painel tático
+    updateTacticalStatus(data);
+
+    // 🟢 Mostra tática detectada
+    if (data.detectedFormation) {
+      showNotification('📋 Tática detectada: ' + data.detectedFormation, "#1E90FF");
+      // Aguarda um pouco antes de mover
+      await new Promise(r => setTimeout(r, 900));
+    }
+
+    // 🔴 Move o time
+    if (data.red) setPositions(data.red);
+
+    // 💬 Comentário do Mister
+    if (data.coachComment)
+      showNotification('🧠 ' + data.coachComment, "#0066cc");
+
+  } catch (err) {
+    console.error('AI analyze error', err);
+    updateTacticalStatus(null);
+    showNotification('❌ Erro na análise tática', "#cc0000");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'AI Análise';
+  }
+});
+
+
+
+/* ===== Desenho tático (canvas) ===== */
+(function(){
+  const canvas = document.getElementById("trace-canvas");
+  const penBtn = document.getElementById("pen-path-btn");
+  const socketLocal = window.socket || null;
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+
+  function resizeCanvasForDisplay() {
+    const ratio = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.style.width = rect.width + "px";
+    canvas.style.height = rect.height + "px";
+    canvas.width = Math.round(rect.width * ratio);
+    canvas.height = Math.round(rect.height * ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+  }
+
+  resizeCanvasForDisplay();
+  window.addEventListener('resize', resizeCanvasForDisplay);
+  window.addEventListener('scroll', () => { resizeCanvasForDisplay(); }, { passive: true });
+
+  let penMode = false, drawing = false, currentPath = [], pointerId = null;
+
+  if (penBtn) {
+    penBtn.addEventListener('click', () => {
+      penMode = !penMode;
+      penBtn.style.background = penMode ? "#33aaff" : "#222";
+      canvas.style.pointerEvents = penMode ? "auto" : "none";
+      penBtn.textContent = penMode ? "✎ Desenhando..." : "✎ Desenho Tático";
+      canvas.style.zIndex = penMode ? "1000" : "1";
+    });
+  }
+
+  canvas.style.touchAction = "none";
+
+  function getCoordFromEvent(evt) {
+    const rect = canvas.getBoundingClientRect();
+    if (evt.clientX !== undefined && evt.clientY !== undefined) return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+    if (evt.touches && evt.touches[0]) return { x: evt.touches[0].clientX - rect.left, y: evt.touches[0].clientY - rect.top };
+    return { x: 0, y: 0 };
+  }
+
+  canvas.addEventListener('pointerdown', (e) => {
+    drawing = true; pointerId = e.pointerId;
+    try { canvas.setPointerCapture(pointerId); } catch (er){}
+    const { x,y } = getCoordFromEvent(e);
+    currentPath = [[x,y]];
+    ctx.beginPath(); ctx.moveTo(x,y);
   });
+
+  canvas.addEventListener('pointermove', (e) => {
+    if (!penMode || !drawing || e.pointerId !== pointerId) return;
+    const { x,y } = getCoordFromEvent(e);
+    ctx.lineTo(x,y);
+    ctx.strokeStyle = "#ff3333"; ctx.lineWidth = 4; ctx.stroke();
+    currentPath.push([x,y]);
+  });
+
+  function finishDrawing(e) {
+    if (!drawing) return;
+    drawing = false;
+    try { canvas.releasePointerCapture(pointerId); } catch (er){}
+    ctx.closePath();
+    if (socketLocal && currentPath.length > 1) socketLocal.emit('path_draw', { path: currentPath });
+    currentPath = []; pointerId = null;
+  }
+
+  canvas.addEventListener('pointerup', finishDrawing);
+  canvas.addEventListener('pointercancel', finishDrawing);
+  canvas.addEventListener('pointerout', (e) => { if (drawing && e.pointerId === pointerId) finishDrawing(e); });
+
+  // touch fallback
+  canvas.addEventListener('touchstart', (e) => {
+    if (!penMode) return;
+    e.preventDefault();
+    const c = getCoordFromEvent(e);
+    drawing = true; currentPath = [[c.x,c.y]];
+    ctx.beginPath(); ctx.moveTo(c.x,c.y);
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', (e) => {
+    if (!penMode || !drawing) return;
+    e.preventDefault();
+    const c = getCoordFromEvent(e);
+    ctx.lineTo(c.x,c.y); ctx.strokeStyle = "#ff3333"; ctx.lineWidth = 4; ctx.stroke();
+    currentPath.push([c.x,c.y]);
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', (e) => {
+    if (!penMode || !drawing) return;
+    e.preventDefault(); drawing = false; ctx.closePath();
+    if (socketLocal && currentPath.length > 1) socketLocal.emit('path_draw', { path: currentPath });
+    currentPath = [];
+  }, { passive: false });
+
+  if (socketLocal) {
+    socketLocal.on('path_draw', (data) => {
+      if (!data || !Array.isArray(data.path) || data.path.length === 0) return;
+      ctx.beginPath();
+      for (let i=0;i<data.path.length;i++){
+        const [x,y] = data.path[i];
+        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle = "#ff3333"; ctx.lineWidth = 4; ctx.stroke(); ctx.closePath();
+    });
+  }
+})();
 </script>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <script>
-        const socket = io('https://guaranifc.onrender.com');
 
-        // Store state for all circles
-        const circles = {};
-        const dragState = {};
+<!-- Chat markup + script (mantido igual ao seu original) -->
+<!-- ... (se preferir, mantenho o bloco de chat original sem alterações) -->
+<script>
+/* === Controle de fullscreen e overlay === */
+const overlay = document.getElementById("fullscreen-overlay");
+const exitBtn = document.getElementById("exit-fullscreen-btn");
 
-        for (let i = 1; i <= 24; i++) {
-            const el = document.getElementById('circle' + i);
-            circles[i] = el;
-            dragState[i] = {
-                dragging: false,
-                offsetX: 0,
-                offsetY: 0,
-                lastReceived: 0
-            };
+function enterFullscreen() {
+  const field = document.documentElement; // página toda
+  if (field.requestFullscreen) field.requestFullscreen();
+  else if (field.webkitRequestFullscreen) field.webkitRequestFullscreen();
+  else if (field.msRequestFullscreen) field.msRequestFullscreen();
+  overlay.style.display = "none"; // remove bloqueio
+}
 
-            // Mouse events
-            el.addEventListener('mousedown', (e) => {
-                dragState[i].dragging = true;
-                dragState[i].offsetX = e.offsetX;
-                dragState[i].offsetY = e.offsetY;
-                dragState[i].active = true;
-                dragState[i].touch = false;
-                window.activeCircleId = i;
-            });
+function exitFullscreen() {
+  if (document.exitFullscreen) document.exitFullscreen();
+  else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  else if (document.msExitFullscreen) document.msExitFullscreen();
+}
 
-            // Touch events
-            el.addEventListener('touchstart', (e) => {
-                dragState[i].dragging = true;
-                const touch = e.touches[0];
-                const rect = el.getBoundingClientRect();
-                dragState[i].offsetX = touch.clientX - rect.left;
-                dragState[i].offsetY = touch.clientY - rect.top;
-                dragState[i].active = true;
-                dragState[i].touch = true;
-                window.activeCircleId = i;
-                e.preventDefault();
-            }, { passive: false });
-        }
+overlay.addEventListener("click", enterFullscreen);
+exitBtn.addEventListener("click", exitFullscreen);
 
-        // Mouse move
-        document.addEventListener('mousemove', (e) => {
-            for (let i = 1; i <= 24; i++) {
-                if (dragState[i].dragging && !dragState[i].touch && window.activeCircleId === i) {
-                    let x = e.clientX - dragState[i].offsetX;
-                    let y = e.clientY - dragState[i].offsetY;
-                    let ts = Date.now();
-                    circles[i].style.left = x + 'px';
-                    circles[i].style.top = y + 'px';
-                    socket.emit('move_circle', { x, y, ts, id: i });
-                }
-            }
-        });
-
-        // Mouse up
-        document.addEventListener('mouseup', () => {
-            for (let i = 1; i <= 24; i++) {
-                dragState[i].dragging = false;
-                dragState[i].active = false;
-            }
-            window.activeCircleId = undefined;
-        });
-
-        // Touch move
-        document.addEventListener('touchmove', (e) => {
-            for (let i = 1; i <= 24; i++) {
-                if (dragState[i].dragging && dragState[i].touch && window.activeCircleId === i) {
-                    const touch = e.touches[0];
-                    let x = touch.clientX - dragState[i].offsetX;
-                    let y = touch.clientY - dragState[i].offsetY;
-                    let ts = Date.now();
-                    circles[i].style.left = x + 'px';
-                    circles[i].style.top = y + 'px';
-                    socket.emit('move_circle', { x, y, ts, id: i });
-                    e.preventDefault();
-                }
-            }
-        }, { passive: false });
-
-        // Touch end
-        document.addEventListener('touchend', () => {
-            for (let i = 1; i <= 24; i++) {
-                dragState[i].dragging = false;
-                dragState[i].active = false;
-            }
-            window.activeCircleId = undefined;
-        });
-
-        // Listen for updates for all circles
-        socket.on('update_circle', (data) => {
-            const i = data.id;
-            if (circles[i] && typeof data.ts === 'number' && data.ts >= dragState[i].lastReceived) {
-                dragState[i].lastReceived = data.ts;
-                circles[i].style.left = data.x + 'px';
-                circles[i].style.top = data.y + 'px';
-            }
-        });
-
-    </script>
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement) {
+    overlay.style.display = "flex"; // volta a aparecer quando sai do fullscreen
+  }
+});
+</script>
+<!-- === Chat do Treinador Português === -->
+<div id="chat-container" style="
+  position:fixed;bottom:20px;right:20px;width:300px;max-height:400px;
+  background:rgba(0,0,0,0.8);color:#fff;border-radius:10px;
+  display:flex;flex-direction:column;overflow:hidden;z-index:10001;
+  font-family:'Segoe UI',sans-serif;font-size:14px;">
+<div id="chat-header" style="background:#222;padding:10px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:8px;color:#fff;">
+  <img src="../../assets/escudo-guaranifc.png" alt="Zenon" style="width:24px;height:24px;border-radius:50%;">
+  Zenon (IA)
+</div>
+  <div id="chat-body" style="flex:1;overflow-y:auto;padding:10px;display:none;"></div>
+  <div id="chat-input-area" style="display:none;border-top:1px solid #333;padding:6px;gap:4px;">
+    <input id="chat-input" type="text" placeholder="Fala com o mister..." 
+      style="flex:1;padding:6px;border:none;border-radius:6px;font-size:14px;">
+    <button id="chat-send" style="background:#0066cc;color:#fff;border:none;
+      border-radius:6px;padding:6px 10px;cursor:pointer;">Enviar</button>
+  </div>
+</div>
 
 <script>
-    // Show/hide Pen Path button on fullscreen change
-    function updatePenPathButton() {
-        const btn = document.getElementById('pen-path-btn');
-        if (
-            document.fullscreenElement ||
-            document.webkitFullscreenElement ||
-            document.msFullscreenElement
-        ) {
-            btn.style.display = 'block';
-        } else {
-            btn.style.display = 'none';
-        }
+/* ====== Chat logic - CORREÇÃO COMPLETA ====== */
+// Variáveis e elementos devem ser definidas uma única vez.
+const coachChat = document.getElementById('coach-chat'); // A caixa de chat principal
+const chatIcon = document.getElementById('chat-icon');   // O ícone flutuante
+const chatHeader = document.getElementById("chat-header");
+const chatBody = document.getElementById("chat-body");
+const chatInputArea = document.getElementById("chat-input-area");
+const chatInput = document.getElementById("chat-input");
+const chatSend = document.getElementById("chat-send");
+let chatOpen = false; // Estado do corpo interno do chat (true: aberto, false: minimizado)
+
+// ----------------------------------------------------
+// 1. Lógica para ABRIR (no clique do ícone flutuante)
+// ----------------------------------------------------
+if (chatIcon && coachChat) {
+    chatIcon.addEventListener('click', () => {
+        // ABRIR: Esconde o ícone e mostra a caixa principal
+        chatIcon.style.display = 'none';
+        coachChat.style.display = 'flex'; // Use 'flex' ou 'block' conforme seu CSS
+        
+        // Garante que o corpo e input estejam visíveis
+        chatOpen = true; 
+        if (chatBody) chatBody.style.display = 'block';
+        if (chatInputArea) chatInputArea.style.display = 'flex';
+    });
+}
+
+// ----------------------------------------------------
+// 2. Lógica para MINIMIZAR/FECHAR (no clique do cabeçalho)
+// ----------------------------------------------------
+chatHeader.addEventListener("click", () => {
+    chatOpen = !chatOpen;
+    
+    // Alterna a visibilidade do corpo e input (Minimização interna)
+    chatBody.style.display = chatOpen ? "block" : "none";
+    chatInputArea.style.display = chatOpen ? "flex" : "none";
+    
+    // NOVIDADE: Se o conteúdo for minimizado (chatOpen=false), FECHA a caixa principal
+    if (!chatOpen) {
+        coachChat.style.display = 'none'; // Esconde a caixa de chat
+        chatIcon.style.display = 'flex';  // Mostra o ícone flutuante de volta
     }
-    document.addEventListener('fullscreenchange', updatePenPathButton);
-    document.addEventListener('webkitfullscreenchange', updatePenPathButton);
-    document.addEventListener('msfullscreenchange', updatePenPathButton);
+});
 
-    // Pen Path Drawing Logic
-    let penMode = false;
-    const penBtn = document.getElementById('pen-path-btn');
-    const canvas = document.getElementById('trace-canvas');
-    const ctx = canvas.getContext('2d');
-    let drawing = false;
-    let currentPath = [];
 
-    penBtn.addEventListener('click', function() {
-        penMode = !penMode;
-        penBtn.style.background = penMode ? "#33aaff" : "#222";
-        canvas.style.pointerEvents = penMode ? "auto" : "none";
-        penBtn.textContent = penMode ? "✎ Desenhando..." : "✎ Desenho Tático";
-    });
+// ----------------------------------------------------
+// 3. Funções de Chat e API (Permanece quase igual)
+// ----------------------------------------------------
+const url_render = 'https://guaranifc.onrender.com';
 
-    // Only allow drawing inside the field
-    function getFieldOffset(e) {
-        const rect = canvas.getBoundingClientRect();
-        let x, y;
-        if (e.touches) {
-            x = e.touches[0].clientX - rect.left;
-            y = e.touches[0].clientY - rect.top;
-        } else {
-            x = e.clientX - rect.left;
-            y = e.clientY - rect.top;
-        }
-        return {x, y};
+function appendMessage(sender, text){
+    // ... (sua função appendMessage)
+    const msg = document.createElement("div");
+    msg.style.marginBottom = "8px";
+    msg.innerHTML = sender === "user"
+        ? `<div style="text-align:right;"><span style="background:#0066cc;padding:6px 10px;border-radius:8px;display:inline-block;">${text}</span></div>`
+        : `<div style="text-align:left;"><span style="background:#333;padding:6px 10px;border-radius:8px;display:inline-block;">${text}</span></div>`;
+    chatBody.appendChild(msg);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+chatSend.addEventListener("click", async ()=>{
+    const message = chatInput.value.trim();
+    if (!message) return;
+    appendMessage("user", message);
+    chatInput.value = "";
+    try {
+        // Correção de sintaxe anterior: use '+' para concatenar a URL
+        const res = await fetch(`https://guaranifc.onrender.com/api/chat`, {
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
+            body: JSON.stringify({ message })
+        });
+        const data = await res.json();
+        appendMessage("bot", data.reply || "O mister ficou em silêncio...");
+    } catch(e){
+        appendMessage("bot","Erro de comunicação com o mister.");
+        console.error(e);
     }
+});
 
-    canvas.addEventListener('mousedown', function(e) {
-        if (!penMode) return;
-        drawing = true;
-        currentPath = [];
-        const {x, y} = getFieldOffset(e);
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        currentPath.push([x, y]);
-    });
-    canvas.addEventListener('mousemove', function(e) {
-        if (drawing && penMode) {
-            const {x, y} = getFieldOffset(e);
-            ctx.lineTo(x, y);
-            ctx.strokeStyle = "#ff3333";
-            ctx.lineWidth = 4;
-            ctx.lineCap = "round";
-            ctx.stroke();
-            currentPath.push([x, y]);
-        }
-    });
-    canvas.addEventListener('mouseup', function(e) {
-        if (drawing && penMode) {
-            drawing = false;
-            ctx.closePath();
-            // Share path via socket.io
-            socket.emit('path_draw', { path: currentPath });
-        }
-    });
-    canvas.addEventListener('mouseleave', function(e) {
-        if (drawing && penMode) {
-            drawing = false;
-            ctx.closePath();
-            socket.emit('path_draw', { path: currentPath });
-        }
-    });
-
-    // Touch support
-    canvas.addEventListener('touchstart', function(e) {
-        if (!penMode) return;
-        drawing = true;
-        currentPath = [];
-        const {x, y} = getFieldOffset(e);
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        currentPath.push([x, y]);
-        e.preventDefault();
-    }, { passive: false });
-    canvas.addEventListener('touchmove', function(e) {
-        if (drawing && penMode) {
-            const {x, y} = getFieldOffset(e);
-            ctx.lineTo(x, y);
-            ctx.strokeStyle = "#ff3333";
-            ctx.lineWidth = 4;
-            ctx.lineCap = "round";
-            ctx.stroke();
-            currentPath.push([x, y]);
-        }
-        e.preventDefault();
-    }, { passive: false });
-    canvas.addEventListener('touchend', function(e) {
-        if (drawing && penMode) {
-            drawing = false;
-            ctx.closePath();
-            socket.emit('path_draw', { path: currentPath });
-        }
-        e.preventDefault();
-    }, { passive: false });
-
-    // Receive and render shared paths from other users
-    socket.on('path_draw', function(data) {
-        if (data && Array.isArray(data.path)) {
-            ctx.beginPath();
-            for (let i = 0; i < data.path.length; i++) {
-                const [x, y] = data.path[i];
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.strokeStyle = "#ff3333";
-            ctx.lineWidth = 4;
-            ctx.lineCap = "round";
-            ctx.stroke();
-            ctx.closePath();
-        }
-    });
-
-    // Optional: Clear canvas on reload/fullscreen
-    function clearCanvas() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-    window.addEventListener('resize', clearCanvas);
-    document.addEventListener('fullscreenchange', clearCanvas);
+chatInput.addEventListener("keydown", (e)=>{
+    if(e.key==="Enter"){ chatSend.click(); }
+});
 </script>
-<script>
-    // Show AI button on fullscreen
-    function updateAIButton() {
-        const btn = document.getElementById('ai-analise-btn');
-        if (
-            document.fullscreenElement ||
-            document.webkitFullscreenElement ||
-            document.msFullscreenElement
-        ) {
-            btn.style.display = 'block';
-        } else {
-            btn.style.display = 'none';
-        }
-    }
-    document.addEventListener('fullscreenchange', updateAIButton);
-    document.addEventListener('webkitfullscreenchange', updateAIButton);
-    document.addEventListener('msfullscreenchange', updateAIButton);
+<div id="tactical-status" style="
+  position:fixed;
+  top:20px;
+  right:20px;
+  background:rgba(0,0,0,0.8);
+  color:#fff;
+  padding:14px 16px;
+  border-radius:10px;
+  font-family:'Segoe UI',sans-serif;
+  font-size:14px;
+  z-index:10002;
+  min-width:220px;
+  line-height:1.5;
+  box-shadow:0 0 8px rgba(0,0,0,0.3);
+  display:none;
+  transition:opacity 0.3s ease;
+"></div>
 
-    // Helper: Get green team positions (circle2 to circle11)
-    function getGreenTeamPositions() {
-        const positions = [];
-        for (let i = 2; i <= 11; i++) {
-            const el = document.getElementById('circle' + i);
-            const left = parseInt(el.style.left || el.offsetLeft);
-            const top = parseInt(el.style.top || el.offsetTop);
-            positions.push({ id: i, left, top });
-        }
-        return positions;
-    }
-
-    // Helper: Update red team positions (circle13 to circle23)
-    function setRedTeamPositions(arr) {
-        for (const p of arr) {
-            const el = document.getElementById('circle' + p.id);
-            if (el) {
-                el.style.left = p.left + 'px';
-                el.style.top = p.top + 'px';
-            }
-        }
-    }
-
-    function getBallPosition() {
-        const el = document.getElementById('circle24');
-        const left = parseInt(el.style.left || el.offsetLeft);
-        const top = parseInt(el.style.top || el.offsetTop);
-        return { left, top };
-    }
-
-    // Custom notification (instead of alert)
-    function showAINotification(message) {
-        const notif = document.getElementById('ai-notification');
-        notif.textContent = message;
-        notif.style.display = 'block';
-        setTimeout(() => { notif.style.display = 'none'; }, 2200);
-    }
-
-    document.getElementById('ai-analise-btn').addEventListener('click', async function() {
-        const greenPositions = getGreenTeamPositions();
-        const ballPosition = getBallPosition();
-        // Show loading
-        this.textContent = "Analisando...";
-        this.disabled = true;
-        try {
-            const response = await fetch('/ai/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ green: greenPositions, ball: ballPosition })
-            });
-            const result = await response.json();
-            if (result.red && Array.isArray(result.red)) {
-                setRedTeamPositions(result.red);
-                showAINotification("AI posicionou o time vermelho!");
-            } else {
-                showAINotification("Erro na resposta da AI.");
-            }
-        } catch (e) {
-            showAINotification("Falha na análise AI.");
-        }
-        this.textContent = "AI Análise";
-        this.disabled = false;
-
-        // Ensure buttons are correct (optional, for robustness)
-        updateAIButton();
-        if (typeof updatePenPathButton === 'function') updatePenPathButton();
-        if (typeof updateExitButton === 'function') updateExitButton();
-    });
-</script>
-<img src="img/Guarani.png" alt="Guarani FC" style="
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    width: 200px;    /* Adjust size as needed */
-    height: auto;
-    z-index: 9000;   /* Below overlays but above field */
-    opacity: 0.85;   /* Optional: subtle transparency */
-    pointer-events: none; /* Prevents blocking clicks */
-">
 </body>
 </html>

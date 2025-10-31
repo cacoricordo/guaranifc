@@ -228,6 +228,8 @@
             font-size: 14px;
             user-select: none;
         }
+
+
         .circle {
             width: 26px; height: 26px;
             background: #33aaff; border-radius: 50%;
@@ -244,16 +246,18 @@
             user-select: none;
         }
         #circle1 { left: 25px; top: 160px; background: #ff33aa; }
-        #circle2 { left: 160px; top: 270px; background: #33ff88; }
-        #circle3 { left: 120px; top: 130px; background: #33ff88; }
-        #circle4 { left: 120px; top: 200px; background: #33ff88; }
-        #circle5 { left: 200px; top: 160px; background: #33ff88; }
-        #circle6 { left: 160px; top: 40px; background: #33ff88; }
-        #circle7 { left: 300px; top: 270px; background: #33ff88; }
-        #circle8 { left: 260px; top: 160px; background: #33ff88; }
-        #circle9 { left: 370px; top: 160px; background: #33ff88; }
-        #circle10 { left: 230px; top: 120px; background: #33ff88; }
-        #circle11 { left: 320px; top: 40px; background: #33ff88; }
+        #circle2 { left: 160px; top: 270px; background: #000000; }
+        #circle3 { left: 120px; top: 130px; background: #000000; }
+        #circle4 { left: 120px; top: 200px; background: #000000; }
+        #circle5 { left: 200px; top: 160px; background: #000000; }
+        #circle6 { left: 160px; top: 40px; background: #000000; }
+        #circle7 { left: 300px; top: 270px; background: #000000; }
+        #circle8 { left: 260px; top: 160px; background: #000000; }
+        #circle9 { left: 370px; top: 160px; background: #000000; }
+        #circle10 { left: 230px; top: 120px; background: #000000; }
+        #circle11 { left: 320px; top: 40px; background: #000000; }
         #circle23 { left: 620px; top: 150px; background: #660000; }
         #circle24 { left: 420px; top: 40px; background: #ffffff; }
         body { margin: 0; overflow: hidden; background-color: green; }
+
+

@@ -1,6 +1,21 @@
 {
+  "name": "osinvictos-soccer-tool",
+  "version": "1.0.0",
+  "description": "Mesa Tática interativa com AI e Chat do Treinador Português",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
     "express": "^5.1.0",
+    "node-fetch": "^3.3.2",
     "socket.io": "^4.8.1"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
 }

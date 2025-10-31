@@ -88,33 +88,80 @@ function analyzeGreenPositions(green) {
   };
 }
 
+// === ⚽ Tactical Detection 4.2.2 (com hitTest + fusão de clusters + suavização) ===
 function detectFormationAdvanced(players) {
-  if (!players || players.length === 0) return '4-3-3';
+  if (!players || players.length < 8) return '4-3-3';
 
-  // Extrai apenas o eixo Y
-  const ys = players.map(p => p.top).sort((a, b) => a - b);
-
-  // Agrupa jogadores por faixas verticais (~linhas horizontais no campo)
+  const RADIUS = 100;        // raio máximo entre jogadores da mesma linha
+  const MERGE_RADIUS = 120;  // distância máxima entre centros de clusters para fusão
   const clusters = [];
-  const tolerance = 45; // distância máxima entre jogadores da mesma linha
 
-  for (const y of ys) {
-    const lastCluster = clusters[clusters.length - 1];
-    if (!lastCluster || Math.abs(y - lastCluster.avg) > tolerance) {
-      clusters.push({ values: [y], avg: y });
+  // Função auxiliar: encontra cluster próximo
+  function findCluster(px, py) {
+    for (const cluster of clusters) {
+      for (const member of cluster.players) {
+        const dx = px - member.left;
+        const dy = py - member.top;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < RADIUS) return cluster;
+      }
+    }
+    return null;
+  }
+
+  // === Agrupa jogadores em clusters espaciais ===
+  for (const p of players) {
+    const cluster = findCluster(p.left, p.top);
+    if (cluster) {
+      cluster.players.push(p);
+
+      // recalcula o centro médio do cluster (com suavização)
+      const avgX = cluster.players.reduce((s, c) => s + c.left, 0) / cluster.players.length;
+      const avgY = cluster.players.reduce((s, c) => s + c.top, 0) / cluster.players.length;
+
+      cluster.centerX = cluster.centerX * 0.7 + avgX * 0.3;
+      cluster.centerY = cluster.centerY * 0.7 + avgY * 0.3;
+
     } else {
-      lastCluster.values.push(y);
-      lastCluster.avg = lastCluster.values.reduce((s, v) => s + v, 0) / lastCluster.values.length;
+      clusters.push({
+        players: [p],
+        centerX: p.left,
+        centerY: p.top,
+      });
     }
   }
 
-  // Contagem por linha
-  const lineCounts = clusters.map(c => c.values.length);
+  // === Após agrupar jogadores, verifica clusters próximos e mescla ===
+  let merged = true;
+  while (merged) {
+    merged = false;
+    for (let i = 0; i < clusters.length; i++) {
+      for (let j = i + 1; j < clusters.length; j++) {
+        const dx = clusters[i].centerX - clusters[j].centerX;
+        const dy = clusters[i].centerY - clusters[j].centerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
 
-  // Ordena linhas por número de jogadores (defesa -> ataque)
+        if (dist < MERGE_RADIUS) {
+          // funde os clusters
+          clusters[i].players = [...clusters[i].players, ...clusters[j].players];
+
+          clusters[i].centerX =
+            clusters[i].players.reduce((s, c) => s + c.left, 0) / clusters[i].players.length;
+          clusters[i].centerY =
+            clusters[i].players.reduce((s, c) => s + c.top, 0) / clusters[i].players.length;
+
+          clusters.splice(j, 1);
+          merged = true;
+          break;
+        }
+      }
+      if (merged) break;
+    }
+  }
+
+  // === Contagem por linha e classificação tática ===
+  const lineCounts = clusters.map(c => c.players.length);
   const sorted = lineCounts.sort((a, b) => b - a);
-
-  // Heurísticas simples para correspondência
   const signature = sorted.join('-');
 
   if (signature.startsWith('4-4-2')) return '4-4-2';
@@ -127,6 +174,7 @@ function detectFormationAdvanced(players) {
   // fallback
   return '4-3-3';
 }
+
 
 const FORMATIONS = {
   "4-3-3": [

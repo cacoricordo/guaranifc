@@ -54,16 +54,16 @@
   <div id="circle10" class="circle">10</div>
   <div id="circle11" class="circle">11</div>
 
-  <div id="circle13" class="circle" style="background:#33FFCC;">11</div>
-  <div id="circle14" class="circle" style="background:#33FFCC;">2</div>
+  <div id="circle13" class="circle" style="background:#33FFCC;">2</div>
+  <div id="circle14" class="circle" style="background:#33FFCC;">6</div>
   <div id="circle15" class="circle" style="background:#33FFCC;">3</div>
   <div id="circle16" class="circle" style="background:#33FFCC;">4</div>
-  <div id="circle17" class="circle" style="background:#33FFCC;">5</div>
-  <div id="circle18" class="circle" style="background:#33FFCC;">6</div>
+  <div id="circle17" class="circle" style="background:#33FFCC;">8</div>
+  <div id="circle18" class="circle" style="background:#33FFCC;">5</div>
   <div id="circle19" class="circle" style="background:#33FFCC;">7</div>
-  <div id="circle20" class="circle" style="background:#33FFCC;">8</div>
-  <div id="circle21" class="circle" style="background:#33FFCC;">9</div>
-  <div id="circle22" class="circle" style="background:#33FFCC;">10</div>
+  <div id="circle20" class="circle" style="background:#33FFCC;">10</div>
+  <div id="circle21" class="circle" style="background:#33FFCC;">11</div>
+  <div id="circle22" class="circle" style="background:#33FFCC;">9</div>
   <div id="circle23" class="circle">01</div>
   <div id="circle24" class="circle"></div>
 
@@ -460,7 +460,81 @@ document.getElementById('ai-analise-btn').addEventListener('click', async functi
   }
 })();
 </script>
+<script>
+  // === Funções auxiliares ===
+  function getPositions(prefix) {
+    const arr = [];
+    for (let i = 13; i <= 22; i++) { // IDs dos jogadores verdes
+      const el = document.getElementById(prefix + i);
+      if (el) {
+        arr.push({
+          id: i,
+          left: parseInt(el.style.left || el.offsetLeft),
+          top: parseInt(el.style.top || el.offsetTop)
+        });
+      }
+    }
+    return arr;
+  }
 
+  function getBall() {
+    const el = document.getElementById('circle24');
+    return {
+      left: parseInt(el.style.left || el.offsetLeft),
+      top: parseInt(el.style.top || el.offsetTop)
+    };
+  }
+
+  function notify(msg) {
+    const n = document.getElementById('ai-notification');
+    n.textContent = msg;
+    n.style.display = 'block';
+    setTimeout(() => n.style.display = 'none', 4000);
+  }
+
+  // === Botão da Análise IA ===
+  const aiBtn = document.getElementById('ai-analise-btn');
+  aiBtn.addEventListener('click', async function() {
+    aiBtn.disabled = true;
+    aiBtn.textContent = "Analisando... ⚙️";
+
+    try {
+      const green = getPositions('circle'); // time verde (IDs 13–22)
+      const black = getPositions('circle'); // time preto (IDs 2–11)
+      const ball = getBall();
+
+      const res = await fetch('http://localhost:10000/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ green, black, ball })
+      });
+
+      const data = await res.json();
+
+      if (data.detectedFormation) {
+        notify(`🧠 Esquema adversário: ${data.detectedFormation}`);
+      }
+
+      if (data.red) {
+        for (const p of data.red) {
+          const el = document.getElementById('circle' + p.id);
+          if (el) {
+            el.style.left = p.left + 'px';
+            el.style.top = p.top + 'px';
+          }
+        }
+        notify("✅ Time verde reposicionado com base no adversário!");
+      }
+
+    } catch (err) {
+      console.error("AI analyze error:", err);
+      notify("❌ Erro na análise da IA!");
+    }
+
+    aiBtn.disabled = false;
+    aiBtn.textContent = "AI Análise";
+  });
+</script>
 <!-- Chat markup + script (mantido igual ao seu original) -->
 <!-- ... (se preferir, mantenho o bloco de chat original sem alterações) -->
 <script>
@@ -582,7 +656,11 @@ chatSend.addEventListener("click", async ()=>{
         const res = await fetch(`https://guaranifc.onrender.com/api/chat`, {
             method:"POST",
             headers:{ "Content-Type":"application/json" },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({
+              green: getPositions('circle'),
+              black: getPositions('black'),
+              ball: getBall()
+            })
         });
         const data = await res.json();
         appendMessage("bot", data.reply || "O mister ficou em silêncio...");

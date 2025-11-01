@@ -239,11 +239,13 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            font-weight: 700;
             color: #fff;
             font-weight: bold;
             font-family: sans-serif;
-            font-size: 14px;
+            font-size: 13px;
             user-select: none;
+            text-shadow: 0 0 3px rgba(0,0,0,0.6);
         }
         #circle1 { left: 25px; top: 160px; background: #ff33aa; }
         #circle2 { left: 160px; top: 270px; background: #000000; }
@@ -260,4 +262,65 @@
         #circle24 { left: 420px; top: 40px; background: #ffffff; }
         body { margin: 0; overflow: hidden; background-color: green; }
 
+/* === Botão IA com spinner === */
+.ai-button {
+  background-color: #2b2b2b;
+  color: #f0f0f0;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.ai-button:hover {
+  background-color: #3a3a3a;
+  transform: scale(1.03);
+}
+
+.ai-button.loading {
+  background-color: #1a1a1a;
+  color: #bbb;
+  cursor: wait;
+}
+
+.ai-button .spinner {
+  display: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ccc;
+  border-top: 2px solid #00d084;
+  border-radius: 50%;
+  position: absolute;
+  right: 10px;
+  top: calc(50% - 8px);
+  animation: spin 0.8s linear infinite;
+}
+
+.ai-button.loading .spinner {
+  display: inline-block;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* === Notificação === */
+.ai-notification {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(20, 20, 20, 0.9);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  display: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: opacity 0.3s;
+}
 

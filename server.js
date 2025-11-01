@@ -135,11 +135,15 @@ function buildRedFromFormation(formationKey, ball, green) {
   }
 
   // Goleiro
-  red.unshift({
-    id: 23,
-    left: FIELD_WIDTH - 10,
-    top: ball?.top || FIELD_HEIGHT / 2
-  });
+const gkTop = (ball && typeof ball.top === 'number')
+  ? FIELD_HEIGHT / 2 + (ball.top - FIELD_HEIGHT / 2) * 0.3 // 30% do movimento da bola
+  : FIELD_HEIGHT / 2;
+
+red.unshift({
+  id: 23,
+  left: FIELD_WIDTH - 10,
+  top: gkTop
+});
 
   return { red };
 }

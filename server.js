@@ -20,9 +20,20 @@ const io = new Server(httpServer, {
 
 io.on("connection", (socket) => {
   console.log("🔌 Novo cliente conectado");
+
+  // 🟢 Quando um jogador for movido (drag)
+  socket.on("player-move", (data) => {
+    // retransmite para todos os outros clientes (menos quem enviou)
+    socket.broadcast.emit("player-move", data);
+  });
+
+  // ⚽ Quando a bola for movida
+  socket.on("ball-move", (data) => {
+    socket.broadcast.emit("ball-move", data);
+  });
+
   socket.on("disconnect", () => console.log("❌ Cliente desconectado"));
 });
-
 
 // === Suporte a caminhos absolutos (necessário para Render e ES Modules) ===
 const __filename = fileURLToPath(import.meta.url);

@@ -145,38 +145,49 @@ app.post("/ai/analyze", async (req, res) => {
     else if (ball.left < CENTER_X && green.some(p => p.left < CENTER_X - 50)) phase = "ataque";
     else if (black.every(p => p.left < CENTER_X - 50)) phase = "avançado";
 
-    // === Mister português ===
-    let coachComment = `O adversário joga em ${detectedFormation}, e nós estamos na fase ${phase}.`;
+ // === Zenon, o camisa 10 do Guarani ===
+let coachComment = `O adversário joga em ${detectedFormation}, e nós estamos na fase ${phase}.`;
 
-    const apiKey = process.env.OPENROUTER_KEY;
-    if (apiKey) {
-      try {
-        const prompt = `O time adversário joga num ${detectedFormation} e está em fase ${phase}. 
-        Fala como um treinador português sarcástico e direto.`;
+const apiKey = process.env.OPENROUTER_KEY;
+if (apiKey) {
+  try {
+    const prompt = `
+    O time adversário joga num ${detectedFormation} e está na fase ${phase}.
+    Comenta a situação como o ex-jogador Zenon do Guarani Futebol Clube — um meia clássico, inteligente e irônico, que fala com calma e sabedoria sobre o jogo.
+    `;
 
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json"
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { 
+            role: "system", 
+            content: `
+            Tu és Zenon, o lendário camisa 10 do Guarani Futebol Clube.
+            Fala como um craque experiente, com ironia leve e inteligência tática.
+            Usa expressões como “bola redonda”, “toque de classe” e “visão de jogo”.
+            Prefere o futebol pensado ao corrido e elogia o toque curto e coletivo.
+            Fala com nostalgia e sabedoria, como quem entende o jogo de dentro do campo.
+            ` 
           },
-          body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: [
-              { role: "system", content: "Tu és um treinador português lendário, sarcástico e tático, que comenta formações com ironia e inteligência." },
-              { role: "user", content: prompt }
-            ],
-            max_tokens: 100,
-            temperature: 0.8
-          })
-        });
+          { role: "user", content: prompt }
+        ],
+        max_tokens: 100,
+        temperature: 0.8
+      })
+    });
 
-        const data = await response.json();
-        coachComment = data?.choices?.[0]?.message?.content?.trim() || coachComment;
-      } catch (err) {
-        console.warn("[AI ANALYZE] OpenRouter falhou:", err.message);
-      }
-    }
+    const data = await response.json();
+    coachComment = data?.choices?.[0]?.message?.content?.trim() || coachComment;
+  } catch (err) {
+    console.warn('[AI ANALYZE] OpenRouter falhou:', err.message);
+  }
+}
 
     // === Envia resultado para o front-end
     res.json({ detectedFormation, phase, red, coachComment });

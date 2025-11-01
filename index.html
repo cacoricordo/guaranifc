@@ -526,6 +526,11 @@ document.getElementById('ai-analise-btn').addEventListener('click', async functi
         notify("✅ Time verde reposicionado com base no adversário!");
       }
 
+if (data.coachComment) {
+  notify(`🎙️ Mister: ${data.coachComment}`);
+}
+
+
     } catch (err) {
       console.error("AI analyze error:", err);
       notify("❌ Erro na análise da IA!");

@@ -503,7 +503,7 @@ document.getElementById('ai-analise-btn').addEventListener('click', async functi
       const black = getPositions('circle'); // time preto (IDs 2–11)
       const ball = getBall();
 
-      const res = await fetch('http://localhost:10000/ai/analyze', {
+      const res = await fetch('http://guaranifc.onrender.com/ai/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ green, black, ball })

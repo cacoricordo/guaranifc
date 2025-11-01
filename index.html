@@ -464,7 +464,7 @@ document.getElementById('ai-analise-btn').addEventListener('click', async functi
   // === Funções auxiliares ===
   function getPositions(prefix) {
     const arr = [];
-    for (let i = 13; i <= 22; i++) { // IDs dos jogadores verdes
+    for (let i = 2; i <= 11; i++) {
       const el = document.getElementById(prefix + i);
       if (el) {
         arr.push({
@@ -485,11 +485,23 @@ document.getElementById('ai-analise-btn').addEventListener('click', async functi
     };
   }
 
-  function notify(msg) {
+  function notify(msg, duration = 5000) {
     const n = document.getElementById('ai-notification');
     n.textContent = msg;
     n.style.display = 'block';
-    setTimeout(() => n.style.display = 'none', 4000);
+    clearTimeout(n.timer);
+    n.timer = setTimeout(() => (n.style.display = 'none'), duration);
+  }
+
+  function animateTeam(prefix, positions) {
+    for (const p of positions) {
+      const el = document.getElementById(prefix + p.id);
+      if (el) {
+        el.style.transition = 'left 1s ease, top 1s ease';
+        el.style.left = p.left + 'px';
+        el.style.top = p.top + 'px';
+      }
+    }
   }
 
   // === Botão da Análise IA ===
@@ -497,49 +509,51 @@ document.getElementById('ai-analise-btn').addEventListener('click', async functi
   aiBtn.addEventListener('click', async function() {
     aiBtn.disabled = true;
     aiBtn.textContent = "Analisando... ⚙️";
+    notify("🤖 O Mister está avaliando o adversário...", 3000);
 
     try {
       const green = getPositions('circle'); // time verde (IDs 13–22)
-      const black = getPositions('circle'); // time preto (IDs 2–11)
+      const black = getPositions('black');  // time preto (IDs 2–11)
       const ball = getBall();
 
-      const res = await fetch('http://guaranifc.onrender.com/ai/analyze', {
+      // 🌐 Usa HTTPS automaticamente se estiver no Render
+      const SERVER_URL = window.location.origin;
+
+      const res = await fetch(`${SERVER_URL}/ai/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ green, black, ball })
       });
 
+      if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
       const data = await res.json();
 
+      // === Retornos da IA ===
       if (data.detectedFormation) {
-        notify(`🧠 Esquema adversário: ${data.detectedFormation}`);
+        notify(`🧠 Esquema adversário: ${data.detectedFormation}`, 4000);
       }
 
       if (data.red) {
-        for (const p of data.red) {
-          const el = document.getElementById('circle' + p.id);
-          if (el) {
-            el.style.left = p.left + 'px';
-            el.style.top = p.top + 'px';
-          }
-        }
-        notify("✅ Time verde reposicionado com base no adversário!");
+        animateTeam('circle', data.red);
+        notify("✅ Time verde reposicionado taticamente!", 4000);
       }
 
       if (data.coachComment) {
-        notify(`🎙️ Mister: ${data.coachComment}`);
+        setTimeout(() => {
+          notify(`🎙️ Mister: ${data.coachComment}`, 7000);
+        }, 1000);
       }
-
 
     } catch (err) {
       console.error("AI analyze error:", err);
-      notify("❌ Erro na análise da IA!");
+      notify("❌ Erro na análise da IA! Verifique conexão.", 5000);
     }
 
     aiBtn.disabled = false;
     aiBtn.textContent = "AI Análise";
   });
 </script>
+
 <!-- Chat markup + script (mantido igual ao seu original) -->
 <!-- ... (se preferir, mantenho o bloco de chat original sem alterações) -->
 <script>

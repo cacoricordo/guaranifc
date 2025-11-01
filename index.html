@@ -690,6 +690,46 @@ chatInput.addEventListener("keydown", (e)=>{
     if(e.key==="Enter"){ chatSend.click(); }
 });
 </script>
+<!-- === WebSocket: sincroniza jogadores em tempo real === -->
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+<script>
+  const socket = io(window.location.origin, { transports: ["websocket"] });
+
+  socket.on("connect", () => {
+    console.log("📡 Conectado ao servidor WebSocket");
+  });
+
+  socket.on("disconnect", () => {
+    console.log("🔌 Desconectado do servidor");
+  });
+
+  // 🔴 Quando o servidor emitir uma nova análise tática
+  socket.on("tactical-analysis", (data) => {
+    console.log("📊 Atualização tática recebida:", data);
+
+    // Atualiza jogadores (ex: time verde/red)
+    if (data.red) {
+      for (const p of data.red) {
+        const el = document.getElementById("circle" + p.id);
+        if (el) {
+          el.style.transition = "left 1s ease, top 1s ease";
+          el.style.left = p.left + "px";
+          el.style.top = p.top + "px";
+        }
+      }
+    }
+
+    // Mostra a fala do Mister
+    if (data.coachComment) {
+      const n = document.getElementById("ai-notification");
+      if (n) {
+        n.textContent = `🎙️ ${data.coachComment}`;
+        n.style.display = "block";
+        setTimeout(() => (n.style.display = "none"), 5000);
+      }
+    }
+  });
+</script>
 <div id="tactical-status" style="
   position:fixed;
   top:20px;

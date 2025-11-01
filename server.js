@@ -6,13 +6,23 @@ import fetch from "node-fetch";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 dotenv.config();
 
-// === Inicialização do servidor ===
+// === Configura servidor HTTP e WebSocket ===
 const app = express();
-app.use(cors());
-app.use(bodyParser.json());
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: { origin: "*" }
+});
+
+io.on("connection", (socket) => {
+  console.log("🔌 Novo cliente conectado");
+  socket.on("disconnect", () => console.log("❌ Cliente desconectado"));
+});
+
 
 // === Suporte a caminhos absolutos (necessário para Render e ES Modules) ===
 const __filename = fileURLToPath(import.meta.url);
@@ -30,18 +40,18 @@ app.get("/", (req, res) => {
 app.use(cors());
 app.use(bodyParser.json());
 
+// === Constantes do campo ===
 const FIELD_WIDTH = 600;
 const FIELD_HEIGHT = 300;
 const CENTER_X = FIELD_WIDTH / 2;
 
-// === Agrupamento espacial (Tactical Detection 4.2.2-FIX) ===
+// === Função de detecção de formação (simplificada) ===
 function detectFormationAdvanced(players) {
   if (!players || players.length < 8) return "4-3-3";
 
   const RADIUS = 100;
   const clusters = [];
 
-  // Encontrar cluster próximo
   function findCluster(px, py) {
     for (const c of clusters) {
       const dx = px - c.centerX;
@@ -51,7 +61,6 @@ function detectFormationAdvanced(players) {
     return null;
   }
 
-  // Agrupa jogadores em linhas (com suavização)
   for (const p of players) {
     const c = findCluster(p.left, p.top);
     if (c) {
@@ -63,60 +72,20 @@ function detectFormationAdvanced(players) {
     }
   }
 
-  // === Merge de linhas próximas (como linhas defensivas e de meio campo) ===
-  let merged = true;
-  while (merged) {
-    merged = false;
-    for (let i = 0; i < clusters.length; i++) {
-      for (let j = i + 1; j < clusters.length; j++) {
-        const dx = clusters[i].centerX - clusters[j].centerX;
-        const dy = clusters[i].centerY - clusters[j].centerY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < 120) {
-          clusters[i].players.push(...clusters[j].players);
-          clusters[i].centerX =
-            clusters[i].players.reduce((s, c) => s + c.left, 0) / clusters[i].players.length;
-          clusters[i].centerY =
-            clusters[i].players.reduce((s, c) => s + c.top, 0) / clusters[i].players.length;
-          clusters.splice(j, 1);
-          merged = true;
-          break;
-        }
-      }
-      if (merged) break;
-    }
-  }
-
-  // === Ordena linhas da defesa pro ataque (eixo X crescente)
   clusters.sort((a, b) => a.centerX - b.centerX);
   const counts = clusters.map(c => c.players.length);
+  const signature = counts.join("-");
 
-  // === Heurísticas baseadas em número de linhas e jogadores
-  const signature = counts.join('-');
-
-  if (signature.startsWith('4-4-2')) return "4-4-2";
-  if (signature.startsWith('3-5-2')) return "3-5-2";
-  if (signature.startsWith('4-2-3-1')) return "4-2-3-1";
-  if (signature.startsWith('5-3-2')) return "5-3-2";
-  if (signature.startsWith('3-4-3')) return "3-4-3";
-  if (signature.startsWith('4-3-3')) return "4-3-3";
-
-  // === Análise espacial por X médio (distância entre linhas)
-  const spacing = [];
-  for (let i = 1; i < clusters.length; i++) {
-    spacing.push(clusters[i].centerX - clusters[i - 1].centerX);
-  }
-  const avgSpacing = spacing.reduce((s, d) => s + d, 0) / (spacing.length || 1);
-
-  if (clusters.length === 3 && avgSpacing < 120) return "4-4-2";
-  if (clusters.length === 3 && avgSpacing > 160) return "4-3-3";
-  if (clusters.length === 4) return "4-2-3-1";
+  if (signature.startsWith("4-4-2")) return "4-4-2";
+  if (signature.startsWith("3-5-2")) return "3-5-2";
+  if (signature.startsWith("4-2-3-1")) return "4-2-3-1";
+  if (signature.startsWith("3-4-3")) return "3-4-3";
+  if (signature.startsWith("4-3-3")) return "4-3-3";
 
   return "4-4-2";
 }
 
-// === FORMATIONS base ===
+// === Formações base ===
 const FORMATIONS = {
   "4-4-2": [
     { id:13, zone:[70, 80] }, { id:14, zone:[70, 220] },
@@ -130,18 +99,11 @@ const FORMATIONS = {
     { id:15, zone:[100,130] }, { id:16, zone:[100,170] },
     { id:17, zone:[210,100] }, { id:18, zone:[210,150] }, { id:19, zone:[210,200] },
     { id:20, zone:[320,80] }, { id:21, zone:[330,150] }, { id:22, zone:[320,220] }
-  ],
-  "4-2-3-1": [
-    { id:13, zone:[70,80] }, { id:14, zone:[70,220] },
-    { id:15, zone:[100,130] }, { id:16, zone:[100,170] },
-    { id:17, zone:[180,120] }, { id:18, zone:[180,180] },
-    { id:19, zone:[240,100] }, { id:20, zone:[240,150] }, { id:21, zone:[240,200] },
-    { id:22, zone:[320,150] }
   ]
 };
 
-// === Monta o time vermelho ===
-function buildRedFromFormation(formationKey, ball, green) {
+// === Gera o time vermelho ===
+function buildRedFromFormation(formationKey, ball) {
   const formation = FORMATIONS[formationKey] || FORMATIONS["4-3-3"];
   const red = [];
 
@@ -154,16 +116,16 @@ function buildRedFromFormation(formationKey, ball, green) {
     });
   }
 
-  // Goleiro
-const gkTop = (ball && typeof ball.top === 'number')
-  ? FIELD_HEIGHT / 2 + (ball.top - FIELD_HEIGHT / 2) * 0.3 // 30% do movimento da bola
-  : FIELD_HEIGHT / 2;
+  // Goleiro acompanha 30% do movimento vertical da bola
+  const gkTop = ball && typeof ball.top === "number"
+    ? FIELD_HEIGHT / 2 + (ball.top - FIELD_HEIGHT / 2) * 0.3
+    : FIELD_HEIGHT / 2;
 
-red.unshift({
-  id: 23,
-  left: FIELD_WIDTH - 10,
-  top: gkTop
-});
+  red.unshift({
+    id: 23,
+    left: FIELD_WIDTH - 10,
+    top: gkTop
+  });
 
   return { red };
 }
@@ -172,29 +134,25 @@ red.unshift({
 app.post("/ai/analyze", async (req, res) => {
   try {
     const { green = [], black = [], ball = {} } = req.body;
-    console.log("[AI ANALYZE] Recebi:", {
-      greenCount: green.length,
-      blackCount: black.length,
-      ball
-    });
+    console.log("[AI ANALYZE] Recebi:", { greenCount: green.length, blackCount: black.length, ball });
 
     const detectedFormation = detectFormationAdvanced(black.length ? black : green);
-    const { red } = buildRedFromFormation(detectedFormation, ball, green);
+    const { red } = buildRedFromFormation(detectedFormation, ball);
 
-    // === Fase de jogo ===
+    // === Fase simples ===
     let phase = "neutro";
     if (ball.left > CENTER_X && black.some(p => p.left > CENTER_X - 50)) phase = "defesa";
     else if (ball.left < CENTER_X && green.some(p => p.left < CENTER_X - 50)) phase = "ataque";
     else if (black.every(p => p.left < CENTER_X - 50)) phase = "avançado";
 
-    // === Gera comentário do treinador ===
+    // === Mister português ===
     let coachComment = `O adversário joga em ${detectedFormation}, e nós estamos na fase ${phase}.`;
 
     const apiKey = process.env.OPENROUTER_KEY;
     if (apiKey) {
       try {
-        const prompt = `O time adversário está todo ${phase === 'defesa' ? 'avançado' : 'recuado'} e joga num ${detectedFormation}. 
-        O nosso time deve reagir taticamente. Fala como um treinador português sarcástico e direto, com visão de jogo.`;
+        const prompt = `O time adversário joga num ${detectedFormation} e está em fase ${phase}. 
+        Fala como um treinador português sarcástico e direto.`;
 
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
@@ -205,7 +163,7 @@ app.post("/ai/analyze", async (req, res) => {
           body: JSON.stringify({
             model: "gpt-4o-mini",
             messages: [
-              { role: "system", content: "Tu és um treinador português lendário, sarcástico e tático, que comenta formações com inteligência e ironia." },
+              { role: "system", content: "Tu és um treinador português lendário, sarcástico e tático, que comenta formações com ironia e inteligência." },
               { role: "user", content: prompt }
             ],
             max_tokens: 100,
@@ -220,13 +178,11 @@ app.post("/ai/analyze", async (req, res) => {
       }
     }
 
-    // ✅ Retorna tudo para o front
-    res.json({
-      detectedFormation,
-      phase,
-      red,
-      coachComment
-    });
+    // === Envia resultado para o front-end
+    res.json({ detectedFormation, phase, red, coachComment });
+
+    // 🔁 Opcional: envia pelo WebSocket também
+    io.emit("tactical-analysis", { detectedFormation, phase, red, coachComment });
 
   } catch (err) {
     console.error("[AI ANALYZE ERROR]", err);
@@ -235,6 +191,9 @@ app.post("/ai/analyze", async (req, res) => {
 });
 
 // === Inicialização do Servidor ===
-const PORT = 10000;
-app.listen(PORT, () => console.log(`🚀 AI Tática 4.2.2-FIX rodando na porta ${PORT}`));
+const PORT = process.env.PORT || 10000;
+httpServer.listen(PORT, () =>
+  console.log(`🚀 AI Tática 4.2.2-FIX (WebSocket + Mister) rodando na porta ${PORT}`)
+);
+
 

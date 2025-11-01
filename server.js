@@ -4,13 +4,28 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
 dotenv.config();
 
+// === Inicialização do servidor ===
 const app = express();
+app.use(cors());
+app.use(bodyParser.json());
 
+// === Suporte a caminhos absolutos (necessário para Render e ES Modules) ===
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// === Servir o frontend estático (index.html + assets) ===
+app.use(express.static(__dirname));
+
+// === Rota padrão: abre o index.html ===
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
+
 
 app.use(cors());
 app.use(bodyParser.json());

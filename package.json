@@ -1,8 +1,9 @@
 {
   "name": "osinvictos-soccer-tool",
-  "version": "1.0.0",
-  "description": "Mesa Tática interativa com AI e Chat do Treinador Português",
+  "version": "4.2.2",
+  "description": "Campo Tático interativo com AI e Chat do ex-jogador camisa 10 do Guarani FC, Zenon",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js"
   },

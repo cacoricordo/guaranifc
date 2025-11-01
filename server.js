@@ -234,14 +234,6 @@ app.post("/ai/analyze", async (req, res) => {
   }
 });
 
-    // === Retorna tudo para o front ===
-    res.json({
-      detectedFormation,
-      phase,
-      red,
-      coachComment
-    });
-
 // === Inicialização do Servidor ===
 const PORT = 10000;
 app.listen(PORT, () => console.log(`🚀 AI Tática 4.2.2-FIX rodando na porta ${PORT}`));

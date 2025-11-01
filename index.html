@@ -729,8 +729,6 @@ chatInput.addEventListener("keydown", (e)=>{
 <!-- === WebSocket: sincroniza jogadores em tempo real === -->
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 <script>
-  const socket = io(window.location.origin, { transports: ["websocket"] });
-
   socket.on("connect", () => {
     console.log("📡 Conectado ao servidor WebSocket");
   });

@@ -671,16 +671,13 @@ chatSend.addEventListener("click", async ()=>{
     appendMessage("user", message);
     chatInput.value = "";
     try {
-        // Correção de sintaxe anterior: use '+' para concatenar a URL
         const res = await fetch(`https://guaranifc.onrender.com/api/chat`, {
-            method:"POST",
-            headers:{ "Content-Type":"application/json" },
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              green: getPositions('circle'),
-              black: getPositions('black'),
-              ball: getBall()
-            })
-        });
+            message: message  // envia o texto que o usuário digitou
+         })
+    });
         const data = await res.json();
         appendMessage("bot", data.reply || "O mister ficou em silêncio...");
     } catch(e){

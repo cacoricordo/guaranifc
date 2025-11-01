@@ -9,6 +9,10 @@
     <meta property="og:image" content="https://www.osinvictos.com.br/assets/guaranifc-previa.png">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <!-- ===== Tactical Squad Scout 4.3.0 — VT Replay ===== -->
+    <!-- gif.js (web worker) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 </head>
 <body style="
   background-image: url('img/estadium.jpg');
@@ -81,6 +85,18 @@
   <button id="ai-analise-btn" style="position:fixed;top:330px;left:120px;z-index:10000;">Análise IA</button>
   <button id="pen-path-btn" style="position:fixed;top:330px;left:302px;z-index:10000;">✎ Desenho Tático</button>
 
+<div id="replay-controls">
+  <button id="replay-start" class="replay-btn">▶️ Start Recording</button>
+  <button id="replay-stop" class="replay-btn" disabled>⏹ Stop</button>
+  <button id="replay-play" class="replay-btn" disabled>🔁 Play Local</button>
+  <button id="replay-upload" class="replay-btn" disabled>⬆️ Upload & Share</button>
+</div>
+
+<div id="replay-preview">
+  <div style="color:#fff;font-size:13px;">Replay Preview</div>
+  <img id="replay-img" src="" alt="replay gif">
+  <div id="replay-share" style="display:none;"></div>
+</div>
 <script>
 
 const SERVER_URL = window.location.origin;
@@ -620,7 +636,7 @@ document.addEventListener("fullscreenchange", () => {
   }
 });
 </script>
-<!-- === Chat do Treinador Português === -->
+<!-- === Chat do camisa 10 Zenon === -->
 <div id="chat-container" style="
   position:fixed;bottom:20px;right:20px;width:300px;max-height:400px;
   background:rgba(0,0,0,0.8);color:#fff;border-radius:10px;
@@ -783,6 +799,223 @@ socket.on("ball-move", (data) => {
   }
 });
 </script>
+
+<script>
+/*
+Replay design:
+- Captura frames desenhando o estado do campo em um canvas offscreen (determinístico)
+- Taxa: 10 FPS (100ms). Buffer: 6s => 60 frames.
+- Usa gif.js para compor GIF (webworker).
+- Depois permite upload para /api/replay (JSON { data: dataURI })
+*/
+
+(function(){
+  const DURATION_MS = 6000; // 6 seconds
+  const FPS = 10;
+  const INTERVAL_MS = Math.round(1000 / FPS);
+  const MAX_FRAMES = Math.ceil(DURATION_MS / INTERVAL_MS);
+
+  const btnStart = document.getElementById('replay-start');
+  const btnStop  = document.getElementById('replay-stop');
+  const btnPlay  = document.getElementById('replay-play');
+  const btnUpload= document.getElementById('replay-upload');
+  const preview  = document.getElementById('replay-preview');
+  const previewImg = document.getElementById('replay-img');
+  const shareDiv = document.getElementById('replay-share');
+
+  let frames = []; // cada frame: ImageData URL (dataURL) ou ImageBitmap
+  let recorderInterval = null;
+  let startedAt = 0;
+
+  // Offscreen canvas: o tamanho deve corresponder ao teu campo.
+  const canvas = document.createElement('canvas');
+  canvas.width = 640; // ajusta conforme teu campo visível; teste com 640x360 ou 600x300
+  canvas.height = 360;
+  const ctx = canvas.getContext('2d');
+
+  // Renderiza o estado do campo (players + ball) no canvas,
+  // usando posicoes atuais nos DOM elements (#circleX)
+  function renderFrameToCanvas() {
+    // Limpa fundo (ajusta cores conforme teu fundo real)
+    ctx.fillStyle = "#0b5a2b"; // cor de grama (ajusta)
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // Opcional: desenhar linhas do campo
+    ctx.strokeStyle = "rgba(255,255,255,0.3)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.rect(10,10,canvas.width-20,canvas.height-20);
+    ctx.stroke();
+
+    // Desenha cada circle do DOM: assume #circle2..#circle24 mapeados
+    for (let i=2;i<=24;i++){
+      const el = document.getElementById('circle'+i);
+      if (!el) continue;
+      // obtém posição relativa na página; tu podes usar offsetLeft/Top que já estava usando
+      const left = parseInt(el.style.left || el.offsetLeft) || 0;
+      const top  = parseInt(el.style.top  || el.offsetTop) || 0;
+      // converte para coordenadas do canvas. Ajusta se teu CSS tem offsets (FIELD_LEFT/TOP)
+      // se usas FIELD_LEFT e FIELD_TOP = 20, subtrai aqui. Ajusta segundo teu layout.
+      const FIELD_LEFT = 20, FIELD_TOP = 20, FIELD_WIDTH = 600, FIELD_HEIGHT = 300;
+      const relX = Math.round((left - FIELD_LEFT) * (canvas.width / FIELD_WIDTH));
+      const relY = Math.round((top - FIELD_TOP) * (canvas.height / FIELD_HEIGHT));
+
+      // desenha círculo
+      const bg = window.getComputedStyle(el).backgroundColor || "#ff0";
+      // converte estilo rgb(...) para fillStyle válido
+      ctx.fillStyle = bg;
+      ctx.beginPath();
+      ctx.arc(relX, relY, 12, 0, Math.PI*2);
+      ctx.fill();
+
+      // desenha número (o texto interno do elemento)
+      ctx.fillStyle = "#fff";
+      ctx.font = "12px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(el.textContent || "", relX, relY);
+    }
+  }
+
+  function captureFrame() {
+    renderFrameToCanvas();
+    // pega dataURL (png)
+    const dataURL = canvas.toDataURL("image/png");
+    frames.push(dataURL);
+    if (frames.length > MAX_FRAMES) frames.shift(); // sliding window
+  }
+
+  function startRecording() {
+    frames = [];
+    startedAt = Date.now();
+    captureFrame(); // frame zero
+    recorderInterval = setInterval(() => {
+      captureFrame();
+      const elapsed = Date.now() - startedAt;
+      if (elapsed >= DURATION_MS) {
+        stopRecording();
+      }
+    }, INTERVAL_MS);
+    btnStart.disabled = true;
+    btnStop.disabled = false;
+    preview.style.display = "none";
+    shareDiv.style.display = "none";
+    btnPlay.disabled = true;
+    btnUpload.disabled = true;
+  }
+
+  function stopRecording() {
+    if (recorderInterval) { clearInterval(recorderInterval); recorderInterval = null; }
+    btnStart.disabled = false;
+    btnStop.disabled = true;
+    btnPlay.disabled = frames.length === 0;
+    btnUpload.disabled = frames.length === 0;
+    // build small preview GIF client-side to show quickly
+    buildGif(frames, {previewOnly:true}).then(dataUrl => {
+      previewImg.src = dataUrl;
+      preview.style.display = "block";
+    }).catch(err=>{
+      console.warn("preview gif error", err);
+    });
+  }
+
+  // Construir GIF via gif.js
+  function buildGif(framesArray, opts = {}) {
+    return new Promise((resolve, reject) => {
+      try {
+        const gif = new GIF({
+          workers: 2,
+          quality: 10,
+          workerScript: "https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js",
+          width: canvas.width,
+          height: canvas.height,
+        });
+
+        // Se framesArray são dataURLs, converte para Image
+        let loaded = 0;
+        framesArray.forEach((dataUrl) => {
+          const img = new Image();
+          img.onload = () => {
+            gif.addFrame(img, {delay: INTERVAL_MS});
+            loaded++;
+            if (loaded === framesArray.length) {
+              gif.on('finished', function(blob) {
+                const url = URL.createObjectURL(blob);
+                // converte blob para dataURL (base64) se pedido
+                const reader = new FileReader();
+                reader.onload = () => {
+                  resolve(reader.result); // dataURL
+                };
+                reader.onerror = (e) => reject(e);
+                reader.readAsDataURL(blob);
+              });
+              // se apenas preview, gera com low quality para ser rápido
+              gif.render();
+            }
+          };
+          img.onerror = (e) => { console.warn("frame load error", e); };
+          img.src = dataUrl;
+        });
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  // Play local: simples reprodução no preview (usa frames como dataURL sequence)
+  function playLocal() {
+    if (!frames || frames.length === 0) return;
+    preview.style.display = "block";
+    let idx = 0;
+    previewImg.src = frames[0];
+    const playInterval = setInterval(() => {
+      idx = (idx+1) % frames.length;
+      previewImg.src = frames[idx];
+    }, INTERVAL_MS);
+    // para após a duração (uma passada)
+    setTimeout(()=>clearInterval(playInterval), frames.length * INTERVAL_MS + 50);
+  }
+
+  async function uploadReplay() {
+    if (!frames || frames.length === 0) return alert("Nenhum frame gravado.");
+    btnUpload.disabled = true;
+    btnUpload.textContent = "⏳ Gerando GIF...";
+    try {
+      const dataUrl = await buildGif(frames, {previewOnly:false});
+      previewImg.src = dataUrl;
+      // envia para o servidor
+      btnUpload.textContent = "⬆️ Enviando...";
+      const res = await fetch('/api/replay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: `replay-${Date.now()}`, data: dataUrl })
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Upload falhou');
+      btnUpload.textContent = "⬆️ Upload feito";
+      shareDiv.style.display = "block";
+      shareDiv.textContent = json.url;
+      shareDiv.onclick = () => { navigator.clipboard.writeText(json.url); alert('Link copiado!'); };
+    } catch (err) {
+      console.error("upload error", err);
+      alert("Falha ao gerar/enviar replay: " + (err.message || err));
+    } finally {
+      btnUpload.disabled = false;
+      btnUpload.textContent = "⬆️ Upload & Share";
+    }
+  }
+
+  // Wire up
+  btnStart.addEventListener('click', startRecording);
+  btnStop.addEventListener('click', stopRecording);
+  btnPlay.addEventListener('click', () => playLocal());
+  btnUpload.addEventListener('click', () => uploadReplay());
+
+  // expose to console for debug
+  window.__replay = { startRecording, stopRecording, frames };
+})();
+</script>
+
 <div id="tactical-status" style="
   position:fixed;
   top:20px;

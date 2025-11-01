@@ -172,62 +172,66 @@ red.unshift({
 app.post("/ai/analyze", async (req, res) => {
   try {
     const { green = [], black = [], ball = {} } = req.body;
-    const detectedFormation = detectFormationAdvanced(black.length ? black : green);
+    console.log("[AI ANALYZE] Recebi:", {
+      greenCount: green.length,
+      blackCount: black.length,
+      ball
+    });
 
+    const detectedFormation = detectFormationAdvanced(black.length ? black : green);
     const { red } = buildRedFromFormation(detectedFormation, ball, green);
 
-  // === Fase de jogo (simplificada) ===
+    // === Fase de jogo ===
     let phase = "neutro";
     if (ball.left > CENTER_X && black.some(p => p.left > CENTER_X - 50)) phase = "defesa";
     else if (ball.left < CENTER_X && green.some(p => p.left < CENTER_X - 50)) phase = "ataque";
     else if (black.every(p => p.left < CENTER_X - 50)) phase = "avançado";
 
-// === Gera comentário do treinador ===
-let coachComment = `O adversário joga em ${detectedFormation}, e nós estamos na fase ${phase}.`;
+    // === Gera comentário do treinador ===
+    let coachComment = `O adversário joga em ${detectedFormation}, e nós estamos na fase ${phase}.`;
 
-const apiKey = process.env.OPENROUTER_KEY;
-if (apiKey) {
-  try {
-    const prompt = `O time adversário está todo ${phase === 'defesa' ? 'avançado' : 'recuado'} e joga num ${detectedFormation}. 
-    O nosso time deve reagir taticamente. Fala como um treinador português sarcástico e direto, com visão de jogo.`;
+    const apiKey = process.env.OPENROUTER_KEY;
+    if (apiKey) {
+      try {
+        const prompt = `O time adversário está todo ${phase === 'defesa' ? 'avançado' : 'recuado'} e joga num ${detectedFormation}. 
+        O nosso time deve reagir taticamente. Fala como um treinador português sarcástico e direto, com visão de jogo.`;
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: "Tu és um treinador português lendário, sarcástico e tático, que comenta formações com inteligência e ironia." },
-          { role: "user", content: prompt }
-        ],
-        max_tokens: 100,
-        temperature: 0.8
-      })
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+              { role: "system", content: "Tu és um treinador português lendário, sarcástico e tático, que comenta formações com inteligência e ironia." },
+              { role: "user", content: prompt }
+            ],
+            max_tokens: 100,
+            temperature: 0.8
+          })
+        });
+
+        const data = await response.json();
+        coachComment = data?.choices?.[0]?.message?.content?.trim() || coachComment;
+      } catch (err) {
+        console.warn("[AI ANALYZE] OpenRouter falhou:", err.message);
+      }
+    }
+
+    // ✅ Retorna tudo para o front
+    res.json({
+      detectedFormation,
+      phase,
+      red,
+      coachComment
     });
 
-    const data = await response.json();
-    coachComment = data?.choices?.[0]?.message?.content?.trim() || coachComment;
-
   } catch (err) {
-    console.warn("[AI ANALYZE] OpenRouter falhou:", err.message);
+    console.error("[AI ANALYZE ERROR]", err);
+    res.status(500).json({ error: "Erro interno na IA" });
   }
-}
-
-// === Retorna tudo para o front ===
-res.json({
-  detectedFormation,
-  phase,
-  red,
-  coachComment
-});
-
-} catch (err) {
-  console.error("[AI ANALYZE ERROR]", err);
-  res.status(500).json({ error: "Erro interno na IA" });
-}
 });
 
     // === Retorna tudo para o front ===

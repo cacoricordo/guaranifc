@@ -190,6 +190,45 @@ app.post("/ai/analyze", async (req, res) => {
   }
 });
 
+// === Endpoint de Chat com o Mister (novo) ===
+app.post("/api/chat", async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ error: "Mensagem ausente." });
+
+    const apiKey = process.env.OPENROUTER_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "Chave OPENROUTER_KEY ausente." });
+    }
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "Tu és o treinador português Mister, sarcástico e experiente. Comenta com inteligência e ironia sobre tática e futebol." },
+          { role: "user", content: message }
+        ],
+        max_tokens: 150,
+        temperature: 0.8
+      })
+    });
+
+    const data = await response.json();
+    const reply = data?.choices?.[0]?.message?.content?.trim() || "O Mister ficou sem palavras...";
+
+    res.json({ reply });
+
+  } catch (err) {
+    console.error("[CHAT ERROR]", err);
+    res.status(500).json({ error: "Falha na conversa com o Mister." });
+  }
+});
+
 // === Inicialização do Servidor ===
 const PORT = process.env.PORT || 10000;
 httpServer.listen(PORT, () =>

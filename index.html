@@ -91,6 +91,19 @@ const socket = io("https://guaranifc.onrender.com", {
 });
 window.socket = socket;
 
+// === Utilitário: throttle ===
+// limita quantas vezes por segundo um evento pode ser enviado
+function throttle(fn, delay) {
+  let last = 0;
+  return (...args) => {
+    const now = Date.now();
+    if (now - last >= delay) {
+      last = now;
+      fn(...args);
+    }
+  };
+}
+
 const circles = {};
 const dragState = {};
 let activeId = null;
@@ -135,7 +148,15 @@ document.addEventListener("mousemove", (e) => {
   const x = e.clientX - dragState[i].offsetX;
   const y = e.clientY - dragState[i].offsetY;
   moveElement(i, x, y);
-  socket.emit("move_circle", { id: i, left: x, top: y });
+  // throttle para limitar envios a cada 50 ms
+const emitPlayerMove = throttle((id, left, top) => {
+  socket.emit("player-move", { id, left, top });
+}, 50);
+
+// dentro do mousemove
+emitPlayerMove("circle" + i, x, y);
+
+
 });
 
 document.addEventListener("touchmove", (e) => {
@@ -146,7 +167,7 @@ document.addEventListener("touchmove", (e) => {
   const x = touch.clientX - dragState[i].offsetX;
   const y = touch.clientY - dragState[i].offsetY;
   moveElement(i, x, y);
-  socket.emit("move_circle", { id: i, left: x, top: y });
+  socket.emit("player-move", { id: "circle" + i, left: x, top: y });
   e.preventDefault();
 }, { passive: false });
 
@@ -167,6 +188,21 @@ socket.on("update_circle", (data) => {
     el.style.top = (data.top) + 'px';
   }
 });
+
+// E o mesmo para a bola:
+const ball = document.getElementById('circle24');
+ball.addEventListener('mouseup', () => {
+  const left = parseInt(ball.style.left);
+  const top = parseInt(ball.style.top);
+  const emitBallMove = throttle((id, left, top) => {
+  socket.emit("ball-move", { id, left, top });
+}, 50);
+
+// dentro do mousemove da bola
+emitBallMove("circle24", x, y);
+
+});
+
 
 /* ===== AI Análise: envia posições reais do adversário ===== */
 function collectGreenPositions() {
@@ -729,6 +765,25 @@ chatInput.addEventListener("keydown", (e)=>{
       }
     }
   });
+
+// === Sincroniza jogadores em tempo real ===
+socket.on("player-move", (data) => {
+  const el = document.getElementById(data.id);
+  if (el) {
+    el.style.transition = "left 0.3s linear, top 0.3s linear";
+    el.style.left = data.left + "px";
+    el.style.top = data.top + "px";
+  }
+});
+
+socket.on("ball-move", (data) => {
+  const el = document.getElementById(data.id);
+  if (el) {
+    el.style.transition = "left 0.2s linear, top 0.2s linear";
+    el.style.left = data.left + "px";
+    el.style.top = data.top + "px";
+  }
+});
 </script>
 <div id="tactical-status" style="
   position:fixed;

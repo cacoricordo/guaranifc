@@ -342,10 +342,4 @@
   cursor: wait;
 }
 
-  #replay-controls { position: absolute; left: 16px; bottom: 16px; z-index: 9999; display:flex; gap:8px; }
-  .replay-btn { padding:8px 10px; border-radius:6px; background:#222; color:#fff; border:1px solid #444; cursor:pointer; }
-  .replay-btn[disabled]{ opacity:0.6; cursor:wait; }
-  #replay-preview { position: absolute; right: 16px; bottom: 16px; z-index:9999; background:rgba(0,0,0,0.6); padding:8px; border-radius:6px; display:none; }
-  #replay-preview img{ max-width:220px; display:block; }
-  #replay-share { margin-top:6px; color:#0f0; cursor:pointer; text-decoration:underline; font-size:13px; }
 

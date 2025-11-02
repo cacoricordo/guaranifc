@@ -15,9 +15,14 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  cors: { origin: "*" }
+  cors: {
+    origin: [
+      "https://www.osinvictos.com.br",
+      "https://osinvictos.com.br"
+    ],
+    methods: ["GET", "POST"]
+  }
 });
-
 io.on("connection", (socket) => {
   console.log("🔌 Novo cliente conectado");
 

@@ -247,18 +247,27 @@
             user-select: none;
             text-shadow: 0 0 3px rgba(0,0,0,0.6);
         }
-        #circle1 { left: 25px; top: 160px; background: #ff33aa; }
-        #circle2 { left: 160px; top: 270px; background: #000000; }
-        #circle3 { left: 120px; top: 130px; background: #000000; }
-        #circle4 { left: 120px; top: 200px; background: #000000; }
-        #circle5 { left: 200px; top: 160px; background: #000000; }
-        #circle6 { left: 160px; top: 40px; background: #000000; }
-        #circle7 { left: 300px; top: 270px; background: #000000; }
-        #circle8 { left: 260px; top: 160px; background: #000000; }
-        #circle9 { left: 370px; top: 160px; background: #000000; }
-        #circle10 { left: 230px; top: 120px; background: #000000; }
-        #circle11 { left: 320px; top: 40px; background: #000000; }
-        #circle23 { left: 620px; top: 150px; background: #660000; }
+		
+		/* GOLEIRO */
+		#circle1  { left:  25px; top: 160px; background:#FFFFFF; color:green; }
+	
+		/* DEFESA (linha de 4) */
+		#circle2  { left: 70px; top:  50px; background:#FFFFFF; color:green; } /* lateral esquerdo */
+		#circle3  { left: 70px; top: 120px; background:#FFFFFF; color:green; } /* zagueiro esquerdo */
+		#circle4  { left: 70px; top: 190px; background:#FFFFFF; color:green; } /* zagueiro direito */
+		#circle5  { left: 70px; top: 260px; background:#FFFFFF; color:green; } /* lateral direito */
+
+		/* MEIO (triângulo 3) */
+		#circle6  { left: 140px; top: 160px; background:#FFFFFF; color:green; } /* volante (6) */
+		#circle7  { left: 160px; top: 90px; background:#FFFFFF; color:green; } /* meia esquerda (8) */
+		#circle8  { left: 160px; top: 230px; background:#FFFFFF; color:green; } /* meia direita (10) */
+
+		/* ATAQUE (linha de 3) */
+		#circle9  { left: 250px; top: 70px; background:#FFFFFF; color:green; } /* ponta esquerda (11) */
+		#circle10 { left: 270px; top: 160px; background:#FFFFFF; color:green; } /* centroavante (9) */
+		#circle11 { left: 250px; top: 250px; background:#FFFFFF; color:green; } /* ponta direita (7) */
+
+        #circle23 { left: 600px; top: 150px; background: #660000; }
         #circle24 { left: 420px; top: 40px; background: #ffffff; }
 
         html, body {
@@ -352,7 +361,8 @@
   font-size: 1.5em;
 }
 #tactical-hud {
-  transition: opacity 0.8s ease, background 0.4s ease, z-index: 5;
+  transition: opacity 0.8s ease, background 0.4s ease;
+
 }
 
     /* --- LOGO CENTRAL --- */

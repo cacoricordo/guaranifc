@@ -3,7 +3,7 @@
 (() => {
   const MISSIONS = [
     "4-4-2", "4-3-3", "4-2-3-1", "4-2-4",
-    "3-5-2", "5-4-1", "4-5-1", "3-4-3", "5-3-2"
+    "3-5-2", "5-4-1", "4-5-1", "3-4-3", "5-3-2", "4-1-4-1"
   ];
 
   // Estado do treino
@@ -36,10 +36,10 @@
 
   const API_BASE = location.origin.includes("onrender.com") || location.origin.includes("localhost")
     ? location.origin
-    : "https://acmilan-5qt5.onrender.com";
+    : "https://guaranifc.onrender.com";
 
   // Helpers
-  function notifyTop(msg, ms=2200){
+  function notifyTop(msg, ms=7200){
     const n = document.getElementById("ai-notification");
     if (!n) return alert(msg);
     n.textContent = msg;
@@ -61,13 +61,40 @@
     return MISSIONS[r];
   }
 
+  let helpTimeout = null;
+  let helpRequestCount = 0;
+
+  // Pedido de ajuda do treinador (via chat)
+  window.addEventListener("coach:help-requested", () => {
+  if (!state.active || state.solved) return;
+
+  state.usedHelpThisAttempt = true;
+
+  // força contabilizar tentativa ao pedir ajuda
+  state.attempts = Math.min(4, state.attempts + 1);
+
+  // pontuação via ajuda
+  scoreWithHelp(state.attempts);
+
+  syncHUD();
+  endTraining(true);
+
+  setTimeout(startTraining, 1100);
+});
+
   function startTraining(){
     state.active = true;
     state.mission = pickMission();
     state.attempts = 0;
     state.usedHelpThisAttempt = false;
     state.solved = false;
-    notifyTop(`🎯 Missão: faça a IA montar ${state.mission}. Mova o time PRETO e aperte "Análise IA".`);
+    notifyTop(`🎯 Missão: faça a IA montar ${state.mission}. Mova o time de treino Branco e aperte "Análise IA".`);
+      clearTimeout(helpTimeout);
+  helpTimeout = setTimeout(() => {
+    if (typeof showAskForTraineeToHelp === "function") {
+      showAskForTraineeToHelp();
+    }
+  }, 30000);
   }
 
   function endTraining(success){
@@ -107,13 +134,6 @@ function scoreWithHelp(attempt){
       return;
     }
     startTraining();
-  });
-
-  // “Pediu ajuda ao treinador” nesta tentativa
-  window.addEventListener("coach:help-requested", () => {
-    if (!state.active || state.solved) return;
-    state.usedHelpThisAttempt = true;
-    notifyTop("🧠 Ajuda do treinador nesta tentativa ativada.");
   });
 
   // Resultado da IA após “Análise IA”

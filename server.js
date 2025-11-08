@@ -82,6 +82,49 @@ const FORMATIONS = {
   { id: 22, role: "centroavante", prefferedZone:[270, 180] }
 ],
 
+// =========================
+// 4-1-4-1
+// =========================
+"4-1-4-1": [
+
+  // ====== DEFESA (4) ======
+  // Lateral direito
+  { id: 13, role: "lateral direito", prefferedZone:[500,  60] },
+
+  // Zagueiro direito
+  { id: 14, role: "zagueiro direito", prefferedZone:[500, 120] },
+
+  // Zagueiro esquerdo
+  { id: 15, role: "zagueiro esquerdo", prefferedZone:[500, 180] },
+
+  // Lateral esquerdo
+  { id: 18, role: "lateral esquerdo", prefferedZone:[500, 240] },
+
+
+  // ====== VOLANTE FIXO (1) ======
+  // Primeiro volante — protege a defesa
+  { id: 16, role: "primeiro volante", prefferedZone:[430, 150] },
+
+
+  // ====== MEIO CAMPO (4) ======
+  // Meia direita (ponta / corredor)
+  { id: 20, role: "meia direita", prefferedZone:[360,  90] },
+
+  // Meia central (camisa 10 / construção)
+  { id: 19, role: "meia central", prefferedZone:[360, 150] },
+
+  // Meia interior (equilíbrio / apoio ao volante)
+  { id: 17, role: "meia interior", prefferedZone:[360, 190] },
+
+  // Meia esquerda (ponta / amplitude)
+  { id: 21, role: "meia esquerda", prefferedZone:[360, 240] },
+
+
+  // ====== ATAQUE (1) ======
+  // Centroavante (referência / pivô)
+  { id: 22, role: "centroavante", prefferedZone:[270, 150] }
+],
+
   // =========================
   // 4-3-3
   // =========================
@@ -384,7 +427,7 @@ const FORMATIONS = {
 
 // === IA: Detector geométrico FIFA 2D ===
 function detectOpponentFormationAdvanced(players) {
-  if (!players || players.length < 8) return "4-2";
+  if (!players || players.length < 8) return "4-4-2";
 
   const sortedByX = [...players].sort((a,b) => a.left - b.left);
   const noGK = sortedByX.slice(1); // drop leftmost
@@ -406,7 +449,7 @@ function detectOpponentFormationAdvanced(players) {
   const signature = counts.join("-");
 
   // Mapeia assinaturas comuns (sem GK)
-  if (["4-4-2","4-3-3","4-2-3-1","4-2-4","3-5-2","5-4-1","4-5-1","3-4-3", "5-3-2"].includes(signature)) return signature;
+  if (["4-4-2","4-3-3","4-2-3-1","4-2-4","3-5-2","5-4-1","4-5-1","3-4-3", "5-3-2", "4-1-4-1"].includes(signature)) return signature;
 
   // Fallback por terços (sem GK) — menos enviesado
   const FIELD_THIRD = 600 / 3; // mantém coerente com seu FIELD_WIDTH
@@ -426,6 +469,7 @@ function detectOpponentFormationAdvanced(players) {
   if (def === 3 && mid === 4 && att === 3) return "3-4-3";
   if (def === 5 && mid === 3 && att === 2) return "5-3-2";
   if (def === 4 && mid === 5 && att === 1) return "4-5-1";
+  if (def === 5 && mid === 4 && att === 1) return "4-1-4-1";
 
   // Último fallback neutro (melhor que fixar 4-4-2)
   return "4-2-3-1";
@@ -433,62 +477,188 @@ function detectOpponentFormationAdvanced(players) {
 
 // === Fase / Bloco / Compactação ===
 function detectPhase(possession, opponentFormation) {
-  if (possession === "verde") return { phase: "Ataque", bloco: "Alto", compactacao: "Larga" };
-  if (["5-4-1", "4-5-1"].includes(opponentFormation)) return { phase: "Defesa", bloco: "Baixo", compactacao: "Curta" };
-  if (["4-4-2", "4-3-3"].includes(opponentFormation)) return { phase: "Transição", bloco: "Médio", compactacao: "Média" };
+
+  // Quando a posse é do Guarani (verde), fase é ataque por padrão
+  if (possession === "verde") {
+    return { phase: "Ataque", bloco: "Alto", compactacao: "Larga" };
+  }
+
+  // ✅ Formações defensivas (bloco baixo, retranca)
+  const blocoBaixo = ["5-4-1", "5-3-2", "4-5-1", "4-1-4-1"];
+  
+  // ✅ Formações equilibradas (bloco médio)
+  const blocoMedio = ["4-4-2", "4-3-3", "3-5-2", "3-4-3"];
+  
+  // ✅ Formações ofensivas (linha alta, amplitude para contra-ataque)
+  const blocoAlto = ["4-2-3-1", "4-2-4"];
+
+  if (blocoBaixo.includes(opponentFormation)) {
+    return { phase: "Defesa", bloco: "Baixo", compactacao: "Curta" };
+  }
+
+  if (blocoMedio.includes(opponentFormation)) {
+    return { phase: "Transição", bloco: "Médio", compactacao: "Média" };
+  }
+
+  if (blocoAlto.includes(opponentFormation)) {
+    return { phase: "Ataque", bloco: "Alto", compactacao: "Larga" };
+  }
+
+  // fallback padrão
   return { phase: "Defesa", bloco: "Baixo", compactacao: "Curta" };
 }
 
-// === Contra-formação ===
+
+// === Contra-formação — Filosofia Carlos Alberto Silva ===
 function chooseCounterFormation(opponentFormation, possession) {
+  
+  // Quando Guarani tem a bola → monta postura ofensiva organizada
   if (possession === "verde") {
     switch (opponentFormation) {
-      case "5-4-1": case "5-3-2": return "4-2-3-1";
-      case "4-4-2": return "4-3-3";
-      case "3-5-2": return "4-2-3-1";
-      case "3-4-3": return "4-2-4";
-      default: return "4-3-3";
+
+      case "5-4-1":
+      case "5-3-2":
+        // Retranca forte: precisamos de meia central conectando e amplitude
+        return "4-2-3-1"; // construção paciente para infiltrar
+
+      case "4-4-2":
+        // Linha horizontal rígida → atacar half-spaces
+        return "4-3-3";   // amplitude + extremos atacando profundidade
+
+      case "4-3-3":
+        // Espelho sem perder meio → cortar triangulação deles
+        return "4-2-3-1";
+
+      case "4-2-4":
+        // Eles tiram meio → ganho numérico no meio
+        return "4-1-4-1"; // controle total de meio de campo
+
+      case "4-1-4-1":
+        // Um volante só protegendo → atrair e infiltrar por dentro
+        return "4-2-3-1"; // superioridade entrelinhas com camisa 10
+
+      case "3-5-2":
+        // 3 zagueiros: abrir campo
+        return "4-3-3";  // amplitude máxima
+
+      case "3-4-3":
+        // Alas altos, espaço nas costas
+        return "4-2-4";  // dois na última linha para atacar profundidade
+
+      default:
+        return "4-3-3";
     }
-  } else {
+  }
+
+  // Quando o Guarani está sem a bola → prioridade é equilíbrio e disciplina
+  else {
     switch (opponentFormation) {
-      case "4-3-3": return "4-5-1";
-      case "4-2-3-1": return "4-4-2";
-      case "3-5-2": return "5-4-1";
-      case "3-4-3": return "5-3-2";
-      default: return "4-4-2";
+
+      case "4-3-3":
+        // eles têm superioridade no meio → fechar corredor central
+        return "4-5-1"; // marcação por zona com compactação curta
+
+      case "4-2-3-1":
+        // neutralizar meia central deles (camisa 10)
+        return "4-4-2"; // 2 encaixes no volante/meia
+
+      case "4-1-4-1":
+        // volante deles constrói → tiramos linha de passe
+        return "4-3-3"; // encaixe no volante e extremos fecham corredor
+
+      case "4-4-2":
+        // Espelho defensivo com disciplina
+        return "4-4-2";
+
+      case "3-5-2":
+        // 2 atacantes deles → sempre sobra 1 nosso
+        return "5-4-1"; // fecha com três zagueiros e alas baixos
+
+      case "3-4-3":
+        // alas altos, perigoso → proteger amplitude
+        return "5-3-2"; // alas voltam, fecha corredor
+
+      case "4-2-4":
+        // eles sacrificam meio campo → transição mata
+        return "4-1-4-1"; // volante controla transição
+
+      default:
+        return "4-4-2";
     }
   }
 }
 
-// === Monta o Verde (direita → esquerda) ===
+
+// === Monta o Verde (direita → esquerda) ===// === Monta o Verde (direita → esquerda) ===
+// Inteligência posicional baseada em:
+// - formação
+// - fase (ataque/defesa)
+// - posição da bola (através de "ball.left / ball.top")
+// - Filosofia Carlos Alberto Silva (organização + superioridade no setor da bola)
+
 function buildGreenFromFormation(formationKey, ball, phase = "defesa") {
   const formation = FORMATIONS[formationKey] || FORMATIONS["4-3-3"];
   const greenAI = [];
+
+  const BALL_X = ball?.left ?? FIELD_WIDTH / 2;
+  const BALL_Y = ball?.top ?? FIELD_HEIGHT / 2;
+
   let offsetX = 0;
-  switch (formationKey) {
-    case "5-4-1": offsetX = 40; break;
-    case "4-5-1": offsetX = 20; break;
-    case "4-2-4": offsetX = 100; break;
-    case "3-5-2": offsetX = 60; break;
-  }
+  let compactY = 0;
+
+  // Offset horizontal por formação (linha mais alta ou mais baixa)
+  const offsetRules = {
+    "4-1-4-1": 30,
+    "4-2-3-1": 20,
+    "4-4-2": 10,
+    "4-3-3": 10,
+    "3-5-2": 60,
+    "4-2-4": 100,
+    "5-4-1": 40,
+    "5-3-2": 45,
+    "3-4-3": 65
+  };
+
+  offsetX = offsetRules[formationKey] || 10;
+
+  // Compactação vertical dependente da fase
+  compactY = phase === "defesa" ? 40 : 0;
 
   for (const pos of formation) {
     const jitter = Math.random() * 4 - 2;
+
+    // === Ajuste posicional no eixo X (compacta ou expande conforme fase)
     let baseX = phase === "ataque"
       ? pos.prefferedZone[0] - offsetX
       : pos.prefferedZone[0] + offsetX;
-    baseX = Math.max(20, Math.min(FIELD_WIDTH - 20, baseX));
-    greenAI.push({ id: pos.id, left: baseX, top: pos.prefferedZone[1] + jitter });
-  }
+
+    // === Inteligência posicional: move o jogador na direção da bola
+    const influence = formationKey === "4-1-4-1" && pos.id === 16
+      ? 0.40 // volante da saída 3+1 se aproxima mais
+      : 0.25 // os demais se movem menos
+
+    baseX = baseX * (1 - influence) + BALL_X * influence;
+
+    // === Compactação vertical (setor da bola)
+    const baseY = pos.prefferedZone[1] + (BALL_Y - pos.prefferedZone[1]) * 0.20 - compactY;
 
     greenAI.push({
-      id: 23,
-      left: FIELD_WIDTH - 30,     // fixo no gol direito
-      top: FIELD_HEIGHT / 2       // apenas desce/sobe pela IA Vision
+      id: pos.id,
+      left: Math.max(20, Math.min(FIELD_WIDTH - 20, baseX)),
+      top: Math.max(25, Math.min(FIELD_HEIGHT - 25, baseY + jitter))
     });
+  }
+
+  // === Goleiro fica alinhado com a bola e eixo do campo
+  greenAI.push({
+    id: 23,
+    left: FIELD_WIDTH - 30,
+    top: BALL_Y
+  });
 
   return { greenAI };
 }
+
 
 // ---------------------------------------------------------------
 // === CLASSIFICAÇÃO TÁTICA POR TERÇOS DO CAMPO (DEF / MID / ATT)
@@ -522,6 +692,7 @@ function detectFormationByThirds(def, mid, att){
   if (def === 5 && mid === 3 && att === 2) return "5-3-2";
   if (def === 4 && mid === 2 && att === 4) return "4-2-4";
   if (def === 4 && mid === 5 && att === 1) return "4-5-1";
+  if (def === 4 && mid === 5 && att === 1) return "4-1-4-1";
 
   return "UNKNOWN";
 }
@@ -542,7 +713,7 @@ function detectFormationByThirds(def, mid, att){
 
     if (!ballInArea || !blackClose) return null;
 
-    console.log("🚨 Pressão na área detectada! Palmeiras fecha duas linhas de 3.");
+    console.log("🚨 Pressão na área detectada! Guarani fecha duas linhas de 3.");
 
     // --- Monta duas linhas de 3 dentro da área ---
     const LINE_X = FIELD_WIDTH - 45; // quase em cima do goleiro
@@ -585,7 +756,7 @@ app.post("/ai/analyze", async (req, res) => {
     : detectOpponentFormationAdvanced(black);
     let detectedFormation = chooseCounterFormation(opponentFormation, possession);
 
-    // ==== NOVO: se o Palmeiras já tem jogadores no campo, deduz via terços ====
+    // ==== NOVO: se o Guarani já tem jogadores no campo, deduz via terços ====
     if (green && green.length > 0){
       const { def, mid, att } = classifyByThird(green);
       const viaThirds = detectFormationByThirds(def, mid, att);
@@ -632,10 +803,10 @@ app.post("/ai/analyze", async (req, res) => {
 app.post("/ai/vision-tactic", async (req, res) => {
   try {
     const { fieldImage, possession, ball, green, black } = req.body;
-    // ✅ Formações permitidas (Palmeiras e adversário)
+    // ✅ Formações permitidas (Guarani e adversário)
     const allowedFormations = [
       "4-4-2", "4-3-3", "4-2-3-1", "4-2-4",
-      "3-5-2", "5-4-1", "4-5-1", "3-4-3", "5-3-2"
+      "3-5-2", "5-4-1", "4-5-1", "3-4-3", "5-3-2", "4-1-4-1"
     ];
     const apiKey = process.env.OPENROUTER_KEY;
 
@@ -647,13 +818,13 @@ app.post("/ai/vision-tactic", async (req, res) => {
     // ✅ AQUI: DEPOIS do JSON.parse
     // =====================================
     
-    let formationMilan = null;
+    let formationGuarani = null;
 
     // Se a visão retornou formação, captura
     if (parsed) {
-      formationMilan =
-        parsed?.formationMilan ??
-        parsed?.formation_palmeiras ??
+      formationGuarani =
+        parsed?.formationGuarani ??
+        parsed?.formation_guarani ??
         null;
     }
 
@@ -664,8 +835,8 @@ app.post("/ai/vision-tactic", async (req, res) => {
     console.log(`📊 TERÇOS: DEF:${def} MID:${mid} ATT:${att} => ${formationThirds}`);
     
     // 3) fallback geométrico se visão não detectar ou retornar UNKNOWN
-    if (!formationMilan || formationMilan === "UNKNOWN") {
-      formationMilan = formationThirds;
+    if (!formationGuarani || formationGuarani === "UNKNOWN") {
+      formationGuarani = formationThirds;
     }
 
 
@@ -681,27 +852,27 @@ app.post("/ai/vision-tactic", async (req, res) => {
           {
             role: "system",
             content:  `
-Você é um analista tático. "Soccer's Scout analyst" Analise APENAS o time PRETO (adversário) na imagem. 
-Ignore o time VERMELHO (Milan) para a formação do adversário.
+Você é um analista tático. "Soccer's Scout analyst" Analise APENAS o time BRANCO (adversário) na imagem. 
+Ignore o time VERMELHO (Guarani) para a formação do adversário.
 
 LEGENDA DA IMAGEM:
-- Círculos PRETOS = adversário
-- Círculos VERMELHOS = Milan
+- Círculos BRANCOS COM NÚMEROS VERDES = adversário
+- Círculos VERDES = Guarani
 - Círculo BRANCO pequeno = bola
 - Dimensão do campo: 600x300
 
 CONDIÇÕES:
-- O adversário (preto) DEFENDE à ESQUERDA e ATACA da ESQUERDA para a DIREITA.
+- O adversário (branco) DEFENDE à ESQUERDA e ATACA da ESQUERDA para a DIREITA.
 - NÃO conte o goleiro na formação (apenas linhas de linha/linha/linha).
 - Use SOMENTE estas formações para o adversário:
-  "4-4-2", "4-3-3", "4-2-3-1", "4-2-4", "3-5-2", "5-4-1", "4-5-1", "3-4-3", "5-3-2".
+  "4-4-2", "4-3-3", "4-2-3-1", "4-2-4", "3-5-2", "5-4-1", "4-5-1", "3-4-3", "5-3-2", "4-1-4-1"
 - Se estiver incerto, escolha a mais provável entre as listas acima (nada fora dessa lista).
 - Retorne APENAS JSON puro, sem texto extra.
 
 FORMATO EXATO:
 {
   "formationOpponent": "4-4-2",
-  "formationMilan": "4-3-3",
+  "formationGuarani": "4-3-3",
   "phase": "ataque" | "defesa" | "transicao",
   "comment": "texto mediano"
 }
@@ -711,7 +882,7 @@ FORMATO EXATO:
             role: "user",
   content: [
     { type: "text", text: `A posse é do time ${possession}.` },
-    { type: "text", text: `Coordenadas normalizadas (600x300): adversário(preto)=${JSON.stringify(black)}, milan(vermelho)=${JSON.stringify(green)}, bola=${JSON.stringify(ball)}.` },
+    { type: "text", text: `Coordenadas normalizadas (600x300): adversário(preto)=${JSON.stringify(black)}, Guarani(vermelho)=${JSON.stringify(green)}, bola=${JSON.stringify(ball)}.` },
     { type: "text", text: `Analise a FORMAÇÃO APENAS do time preto com base nas posições e na imagem.` },
     { type: "input_image", image_data: fieldImage }
   ]
@@ -764,9 +935,9 @@ if (!allowedFormations.includes(formationOpponent)) {
 
 const phase = parsed?.phase ?? "defesa";
 
-// Move o Palmeiras no campo usando a sua formação
+// Move o Guarani no campo usando a sua formação
 const { greenAI } = buildGreenFromFormation(
-  formationMilan,
+  formationGuarani,
   ball,
   phase === "ataque" ? "ataque" : "defesa"
 );
@@ -776,7 +947,7 @@ const emergency = emergencyBlockIfUnderPressure(ball, black);
 if (emergency) {
   return res.json({
     opponentFormation,
-    detectedFormation: formationMilan,  // agora existe
+    detectedFormation: formationGuarani,  // agora existe
     phase: "defesa",
     bloco: "BAIXO",
     compactacao: "ULTRA",
@@ -788,7 +959,7 @@ if (emergency) {
 // ✅ Resposta final para o frontend
 return res.json({
   opponentFormation: formationOpponent,
-  detectedFormation: formationMilan,
+  detectedFormation: formationGuarani,
   phase: parsed?.phase ?? "defesa",
   green: greenAI,
   coachComment: parsed?.comment || ""
@@ -831,7 +1002,7 @@ app.post("/api/chat", async (req, res) => {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: "Tu sei Massimiliano Allegri, allenatore del Milan. Comunichi con intensità, fermezza e pragmatismo. Ogni decisione è guidata da disciplina tattica, organizzazione difensiva e gestione intelligente dei ritmi della partita. Parli in modo diretto, chiaro e strategico. Metti l’accento su compattezza tra i reparti, equilibrio e transizioni rapide ed efficaci. Esigi concentrazione totale, responsabilità tattica e mentalità vincente da ogni giocatore in campo." },
+          { role: "system", content: "Você é CARECA, ex-centroavante camisa 9 do Guarani. Sua comunicação é prática, confiante e de jogador experiente. Fala com mentalidade de artilheiro e liderança natural: objetivo, tranquilo, porém assertivo. Suas orientações se baseiam em leitura de jogo, movimentação inteligente e antecipação dentro da área. Você valoriza o simples bem feito: tabelar, se desmarcar, atacar o espaço certo e finalizar com convicção. Você incentiva, motiva e orienta: 'gol é consequência do posicionamento e da decisão correta'. Usa linguagem de boleiro, mas educada. Passa confiança, serenidade e foco no resultado. Quando orienta o usuário, você explica o porquê da escolha tática e onde o jogador deve se posicionar para criar superioridade. Sua prioridade é: *calma, inteligência e eficiência*. Sempre transmite mentalidade vencedora, orgulho pelo Guarani e respeito pelo futebol." },
           { role: "user", content: message }
         ],
         temperature: 0.8,

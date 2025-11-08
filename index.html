@@ -4,11 +4,25 @@
     <meta charset="UTF-8">
     <title>Guarani FC, Campo Tático</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta property="og:title" content="Guarani FC, Campo Tático">
-    <meta property="og:description" content="Campeão Invicto na Copa do Brasil de 2025 no Futebol de 7">
-    <meta property="og:image" content="https://www.osinvictos.com.br/dashboard/guaranifc/guaranifc-previa.png">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.osinvictos.com.br/dashboard/guaranifc/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://www.osinvictos.com.br/dashboard/guaranifc/img/guranifc-previa.jpg">
+    <meta property="og:title" content="AC Milan, Campo Tático">
+    <meta property="og:description" content="Campeão Invicto da Copa do Brasil 2025 no futebol 7">
+    <meta property="og:image" content="https://www.osinvictos.com.br/dashboard/guaranifc/img/guaranifc-previa.jpg">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZDWS2F3NE8"></script>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+    <script src="invicto1960.js" defer></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-ZDWS2F3NE8');
+    </script>
 </head>
 <body style="
   background-image: url('img/estadium.jpg');
@@ -37,11 +51,11 @@
     <div id="background-line15"></div>
     <div id="background-line16"></div>
     <div id="background-line17"></div>
-  <div id="circle12" class="circlecentral" style="background:transparent;left:237px;top:100px;border:2px solid #fff;"></div>
+  <div id="circulocentrar" class="circlecentral" style="background:transparent;left:237px;top:100px;border:2px solid #fff;"></div>
   <div id="gol-square" class="gol-square"></div>
   <div id="gol2-square" class="gol2-square"></div>
 
-  <!-- Jogadores e time adversário (IDs originais mantidos) -->
+  <!-- Jogadores e time adversário -->
   <div id="circle1" class="circle">1</div>
   <div id="circle2" class="circle">2</div>
   <div id="circle3" class="circle">3</div>
@@ -53,731 +67,126 @@
   <div id="circle9" class="circle">9</div>
   <div id="circle10" class="circle">10</div>
   <div id="circle11" class="circle">11</div>
-
-  <div id="circle13" class="circle" style="background:#33FFCC;">2</div>
-  <div id="circle14" class="circle" style="background:#33FFCC;">6</div>
-  <div id="circle15" class="circle" style="background:#33FFCC;">3</div>
-  <div id="circle16" class="circle" style="background:#33FFCC;">4</div>
-  <div id="circle17" class="circle" style="background:#33FFCC;">8</div>
-  <div id="circle18" class="circle" style="background:#33FFCC;">5</div>
-  <div id="circle19" class="circle" style="background:#33FFCC;">7</div>
-  <div id="circle20" class="circle" style="background:#33FFCC;">10</div>
-  <div id="circle21" class="circle" style="background:#33FFCC;">11</div>
-  <div id="circle22" class="circle" style="background:#33FFCC;">9</div>
+  <div id="circle12" class="circle" style="background: transparent;"></div>
+  <div id="circle13" class="circle" style="background:#125424;">2</div>
+  <div id="circle14" class="circle" style="background:#125424;">6</div>
+  <div id="circle15" class="circle" style="background:#125424;">3</div>
+  <div id="circle16" class="circle" style="background:#125424;">4</div>
+  <div id="circle17" class="circle" style="background:#125424;">8</div>
+  <div id="circle18" class="circle" style="background:#125424;">5</div>
+  <div id="circle19" class="circle" style="background:#125424;">7</div>
+  <div id="circle20" class="circle" style="background:#125424;">10</div>
+  <div id="circle21" class="circle" style="background:#125424;">11</div>
+  <div id="circle22" class="circle" style="background:#125424;">9</div>
   <div id="circle23" class="circle">01</div>
-  <div id="circle24" class="circle"></div>
-
+  <div id="circle24" class="circle" style="left:280px;top:140px;background:#fff;z-index:12000"></div>
+  </div>
   <canvas id="trace-canvas" width="600" height="300"
    style="position:absolute;left:20px;top:20px;z-index:10;border-radius:8px;background:transparent;"></canvas>
 
   <div id="ai-notification" style="display:none;position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:#33aaff;color:#fff;padding:18px 32px;border-radius:8px;z-index:10001;font-size:1.1em;box-shadow:0 2px 10px rgba(0,0,0,0.18);"></div>
 
-  <!-- Botões -->
-  <div id="fullscreen-overlay" style="position:fixed;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);color:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;font-size:2em;cursor:pointer;z-index:10055">
-    Toque para entrar na Mesa Tática
-  </div>
-
-  <button id="exit-fullscreen-btn" style="position:fixed;top:330px;left:20px;z-index:10000;">Sair (x)</button>
-  <button id="ai-analise-btn" style="position:fixed;top:330px;left:120px;z-index:10000;">Análise IA</button>
-  <button id="pen-path-btn" style="position:fixed;top:330px;left:302px;z-index:10000;">✎ Desenho Tático</button>
-
-<script>
-
-/* ===== CORE: movimento, socket e AI analyze ===== */
-const socket = io("https://guaranifc.onrender.com", {
-  transports: ["websocket", "polling"]
-});
-window.socket = socket;
-
-// === Utilitário: throttle ===
-// limita quantas vezes por segundo um evento pode ser enviado
-function throttle(fn, delay) {
-  let last = 0;
-  return (...args) => {
-    const now = Date.now();
-    if (now - last >= delay) {
-      last = now;
-      fn(...args);
-    }
-  };
-}
-
-const circles = {};
-const dragState = {};
-let activeId = null;
-
-for (let i = 1; i <= 24; i++) {
-  const el = document.getElementById("circle" + i);
-  circles[i] = el;
-  dragState[i] = { dragging: false, offsetX: 0, offsetY: 0 };
-  if (!el) continue;
-  el.style.position = el.style.position || 'absolute';
-  el.style.zIndex = '20';
-
-  el.addEventListener("mousedown", (e) => {
-    dragState[i].dragging = true;
-    dragState[i].offsetX = e.offsetX;
-    dragState[i].offsetY = e.offsetY;
-    activeId = i;
-  });
-
-  el.addEventListener("touchstart", (e) => {
-    const touch = e.touches[0];
-    const rect = el.getBoundingClientRect();
-    dragState[i].dragging = true;
-    dragState[i].offsetX = touch.clientX - rect.left;
-    dragState[i].offsetY = touch.clientY - rect.top;
-    activeId = i;
-    e.preventDefault();
-  }, { passive: false });
-}
-
-function moveElement(id, x, y) {
-  const el = circles[id];
-  if (el) {
-    el.style.left = x + "px";
-    el.style.top = y + "px";
-  }
-}
-
-document.addEventListener("mousemove", (e) => {
-  if (!activeId) return;
-  const i = activeId;
-  const x = e.clientX - dragState[i].offsetX;
-  const y = e.clientY - dragState[i].offsetY;
-  moveElement(i, x, y);
-  // throttle para limitar envios a cada 50 ms
-const emitPlayerMove = throttle((id, left, top) => {
-  socket.emit("player-move", { id, left, top });
-}, 50);
-
-// dentro do mousemove
-emitPlayerMove("circle" + i, x, y);
-
-
-});
-
-document.addEventListener("touchmove", (e) => {
-  if (!activeId) return;
-  const i = activeId;
-  const touch = e.touches[0];
-  const rect = circles[i].getBoundingClientRect();
-  const x = touch.clientX - dragState[i].offsetX;
-  const y = touch.clientY - dragState[i].offsetY;
-  moveElement(i, x, y);
-  socket.emit("player-move", { id: "circle" + i, left: x, top: y });
-  e.preventDefault();
-}, { passive: false });
-
-function endDrag() {
-  if (activeId) {
-    dragState[activeId].dragging = false;
-    activeId = null;
-  }
-}
-document.addEventListener("mouseup", endDrag);
-document.addEventListener("touchend", endDrag);
-
-socket.on("update_circle", (data) => {
-  // data has {id, left, top}
-  const el = document.getElementById('circle' + data.id);
-  if (el) {
-    el.style.left = (data.left) + 'px';
-    el.style.top = (data.top) + 'px';
-  }
-});
-
-// E o mesmo para a bola:
-const ball = document.getElementById('circle24');
-ball.addEventListener('mouseup', () => {
-  const left = parseInt(ball.style.left);
-  const top = parseInt(ball.style.top);
-  const emitBallMove = throttle((id, left, top) => {
-  socket.emit("ball-move", { id, left, top });
-}, 50);
-
-// dentro do mousemove da bola
-emitBallMove("circle24", x, y);
-
-});
-
-
-/* ===== AI Análise: envia posições reais do adversário ===== */
-function collectGreenPositions() {
-  // prefer IDs 13..22 (your green team). fallback to 2..11
-  const idsPrimary = Array.from({length:10}, (_,i)=>2+i); // 2..11
-  const idsFallback = Array.from({length:10}, (_,i)=>2+i); // 2..11
-  let arr = [];
-  for (const id of idsPrimary) {
-    const el = document.getElementById('circle' + id);
-    if (!el) { arr = []; break; }
-    arr.push({ id, left: parseInt(el.style.left || el.offsetLeft), top: parseInt(el.style.top || el.offsetTop) });
-  }
-  if (arr.length === 0) {
-    for (const id of idsFallback) {
-      const el = document.getElementById('circle' + id);
-      if (!el) continue;
-      arr.push({ id, left: parseInt(el.style.left || el.offsetLeft), top: parseInt(el.style.top || el.offsetTop) });
-    }
-  }
-  return arr;
-}
-
-function getBall() {
-  const el = document.getElementById('circle24');
-  return { left: parseInt(el.style.left || el.offsetLeft), top: parseInt(el.style.top || el.offsetTop) };
-}
-
-function setPositions(red) {
-  const canvas = document.getElementById("trace-canvas");
-  const ctx = canvas.getContext("2d");
-
-  for (const p of red) {
-    const el = document.getElementById('circle' + p.id);
-    if (!el) continue;
-
-    // Posição inicial
-    const startX = parseInt(el.style.left || el.offsetLeft);
-    const startY = parseInt(el.style.top || el.offsetTop);
-
-    const endX = p.left;
-    const endY = p.top;
-
-    // === Desenha linha de deslocamento (trail tático) ===
-    ctx.beginPath();
-    ctx.moveTo(startX + 20, startY + 20); // leve offset central do círculo
-    ctx.lineTo(endX + 20, endY + 20);
-    ctx.strokeStyle = "rgba(255, 51, 51, 0.6)";
-    ctx.lineWidth = 2;
-    ctx.shadowColor = "rgba(255, 51, 51, 0.4)";
-    ctx.shadowBlur = 4;
-    ctx.stroke();
-    ctx.closePath();
-
-    // Limpa o rastro após 1 segundo (efeito transitório)
-    setTimeout(() => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }, 1000);
-
-    // === Anima movimento do jogador ===
-    el.style.transition = "all 1s cubic-bezier(0.25, 0.8, 0.25, 1)";
-    el.style.opacity = "0.7";
-
-    requestAnimationFrame(() => {
-      el.style.left = endX + "px";
-      el.style.top = endY + "px";
-    });
-
-    setTimeout(() => {
-      el.style.opacity = "1";
-    }, 1000);
-  }
-}
-
-
-function updateTacticalStatus(info) {
-  const panel = document.getElementById('tactical-status');
-  if (!panel) return;
-
-  // Limpa painel se não houver info
-  if (!info) {
-    panel.style.display = 'none';
-    return;
-  }
-
-  const { detectedFormation, phase, red } = info;
-
-  // === Conteúdo do painel com botão de fechar ===
-  panel.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <strong>📊 Situação Tática</strong>
-      <button id="close-tactical-panel"
-        style="
-          background:transparent;
-          border:none;
-          color:#fff;
-          font-size:16px;
-          font-weight:bold;
-          cursor:pointer;
-          margin-left:8px;
-        "
-        title="Fechar painel">×</button>
-    </div>
-    <hr style="border:0;border-top:1px solid rgba(255,255,255,0.2);margin:6px 0;">
-    <b>📋 Tática:</b> ${detectedFormation || '---'}<br>
-    <b>🧭 Fase:</b> ${phase || '---'}<br>
-    <b>⚫ Jogadores:</b> ${(red && red.length) || 0}
-  `;
-
-  panel.style.display = 'block';
-
-  // === Evento do botão de fechar ===
-  const closeBtn = document.getElementById('close-tactical-panel');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      panel.style.opacity = '0';
-      setTimeout(() => {
-        panel.style.display = 'none';
-        panel.style.opacity = '1';
-      }, 300);
-    });
-  }
-}
-
-
-function showNotification(msg, bg="#33aaff"){
-  const n = document.getElementById('ai-notification');
-  n.textContent = msg;
-  n.style.background = bg;
-  n.style.display = 'block';
-  n.style.opacity = '1';
-  setTimeout(()=>{ n.style.opacity = '0'; }, 17500);
-  setTimeout(()=>{ n.style.display = 'none'; }, 18500);
-}
-
-document.getElementById('ai-analise-btn').addEventListener('click', async function(){
-  const btn = this;
-  btn.disabled = true;
-  btn.textContent = 'Analisando... ⚙️';
-
-  try {
-    const green = collectGreenPositions();
-    const ball = getBall();
-
-    const res = await fetch(`https://guaranifc.onrender.com/ai/analyze`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ green, ball })
-    });
-
-    if (!res.ok) throw new Error(`Server returned ${res.status}`);
-
-    const data = await res.json();
-
-    // ✅ Atualiza painel tático
-    updateTacticalStatus(data);
-
-    // 🟢 Mostra tática detectada
-    if (data.detectedFormation) {
-      showNotification('📋 Tática detectada: ' + data.detectedFormation, "#1E90FF");
-      // Aguarda um pouco antes de mover
-      await new Promise(r => setTimeout(r, 900));
-    }
-
-    // 🔴 Move o time
-    if (data.red) setPositions(data.red);
-
-    // 💬 Comentário do Mister
-    if (data.coachComment)
-      showNotification('🧠 ' + data.coachComment, "#0066cc");
-
-  } catch (err) {
-    console.error('AI analyze error', err);
-    updateTacticalStatus(null);
-    showNotification('❌ Erro na análise tática', "#cc0000");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'AI Análise';
-  }
-});
-
-
-
-/* ===== Desenho tático (canvas) ===== */
-(function(){
-  const canvas = document.getElementById("trace-canvas");
-  const penBtn = document.getElementById("pen-path-btn");
-  const socketLocal = window.socket || null;
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-
-  function resizeCanvasForDisplay() {
-    const ratio = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.style.width = rect.width + "px";
-    canvas.style.height = rect.height + "px";
-    canvas.width = Math.round(rect.width * ratio);
-    canvas.height = Math.round(rect.height * ratio);
-    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-  }
-
-  resizeCanvasForDisplay();
-  window.addEventListener('resize', resizeCanvasForDisplay);
-  window.addEventListener('scroll', () => { resizeCanvasForDisplay(); }, { passive: true });
-
-  let penMode = false, drawing = false, currentPath = [], pointerId = null;
-
-  if (penBtn) {
-    penBtn.addEventListener('click', () => {
-      penMode = !penMode;
-      penBtn.style.background = penMode ? "#33aaff" : "#222";
-      canvas.style.pointerEvents = penMode ? "auto" : "none";
-      penBtn.textContent = penMode ? "✎ Desenhando..." : "✎ Desenho Tático";
-      canvas.style.zIndex = penMode ? "1000" : "1";
-    });
-  }
-
-  canvas.style.touchAction = "none";
-
-  function getCoordFromEvent(evt) {
-    const rect = canvas.getBoundingClientRect();
-    if (evt.clientX !== undefined && evt.clientY !== undefined) return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
-    if (evt.touches && evt.touches[0]) return { x: evt.touches[0].clientX - rect.left, y: evt.touches[0].clientY - rect.top };
-    return { x: 0, y: 0 };
-  }
-
-  canvas.addEventListener('pointerdown', (e) => {
-    drawing = true; pointerId = e.pointerId;
-    try { canvas.setPointerCapture(pointerId); } catch (er){}
-    const { x,y } = getCoordFromEvent(e);
-    currentPath = [[x,y]];
-    ctx.beginPath(); ctx.moveTo(x,y);
-  });
-
-  canvas.addEventListener('pointermove', (e) => {
-    if (!penMode || !drawing || e.pointerId !== pointerId) return;
-    const { x,y } = getCoordFromEvent(e);
-    ctx.lineTo(x,y);
-    ctx.strokeStyle = "#ff3333"; ctx.lineWidth = 4; ctx.stroke();
-    currentPath.push([x,y]);
-  });
-
-  function finishDrawing(e) {
-    if (!drawing) return;
-    drawing = false;
-    try { canvas.releasePointerCapture(pointerId); } catch (er){}
-    ctx.closePath();
-    if (socketLocal && currentPath.length > 1) socketLocal.emit('path_draw', { path: currentPath });
-    currentPath = []; pointerId = null;
-  }
-
-  canvas.addEventListener('pointerup', finishDrawing);
-  canvas.addEventListener('pointercancel', finishDrawing);
-  canvas.addEventListener('pointerout', (e) => { if (drawing && e.pointerId === pointerId) finishDrawing(e); });
-
-  // touch fallback
-  canvas.addEventListener('touchstart', (e) => {
-    if (!penMode) return;
-    e.preventDefault();
-    const c = getCoordFromEvent(e);
-    drawing = true; currentPath = [[c.x,c.y]];
-    ctx.beginPath(); ctx.moveTo(c.x,c.y);
-  }, { passive: false });
-
-  canvas.addEventListener('touchmove', (e) => {
-    if (!penMode || !drawing) return;
-    e.preventDefault();
-    const c = getCoordFromEvent(e);
-    ctx.lineTo(c.x,c.y); ctx.strokeStyle = "#ff3333"; ctx.lineWidth = 4; ctx.stroke();
-    currentPath.push([c.x,c.y]);
-  }, { passive: false });
-
-  canvas.addEventListener('touchend', (e) => {
-    if (!penMode || !drawing) return;
-    e.preventDefault(); drawing = false; ctx.closePath();
-    if (socketLocal && currentPath.length > 1) socketLocal.emit('path_draw', { path: currentPath });
-    currentPath = [];
-  }, { passive: false });
-
-  if (socketLocal) {
-    socketLocal.on('path_draw', (data) => {
-      if (!data || !Array.isArray(data.path) || data.path.length === 0) return;
-      ctx.beginPath();
-      for (let i=0;i<data.path.length;i++){
-        const [x,y] = data.path[i];
-        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-      }
-      ctx.strokeStyle = "#ff3333"; ctx.lineWidth = 4; ctx.stroke(); ctx.closePath();
-    });
-  }
-})();
-</script>
-<script>
-  // === Funções auxiliares ===
-  function getPositions(prefix) {
-    const arr = [];
-    for (let i = 2; i <= 11; i++) {
-      const el = document.getElementById(prefix + i);
-      if (el) {
-        arr.push({
-          id: i,
-          left: parseInt(el.style.left || el.offsetLeft),
-          top: parseInt(el.style.top || el.offsetTop)
-        });
-      }
-    }
-    return arr;
-  }
-
-  function getBall() {
-    const el = document.getElementById('circle24');
-    return {
-      left: parseInt(el.style.left || el.offsetLeft),
-      top: parseInt(el.style.top || el.offsetTop)
-    };
-  }
-
-  function notify(msg, duration = 5000) {
-    const n = document.getElementById('ai-notification');
-    n.textContent = msg;
-    n.style.display = 'block';
-    clearTimeout(n.timer);
-    n.timer = setTimeout(() => (n.style.display = 'none'), duration);
-  }
-
-  function animateTeam(prefix, positions) {
-    for (const p of positions) {
-      const el = document.getElementById(prefix + p.id);
-      if (el) {
-        el.style.transition = 'left 1s ease, top 1s ease';
-        el.style.left = p.left + 'px';
-        el.style.top = p.top + 'px';
-      }
-    }
-  }
-
-  // === Botão da Análise IA ===
-  const aiBtn = document.getElementById('ai-analise-btn');
-  aiBtn.addEventListener('click', async function() {
-    aiBtn.disabled = true;
-    aiBtn.textContent = "Analisando... ⚙️";
-    notify("🤖 O Mister está avaliando o adversário...", 3000);
-
-    try {
-      const green = getPositions('circle'); // time verde (IDs 13–22)
-      const black = getPositions('black');  // time preto (IDs 2–11)
-      const ball = getBall();
-
-      const res = await fetch(`https://guaranifc.onrender.com/ai/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ green, black, ball })
-      });
-
-      if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
-      const data = await res.json();
-
-      // === Retornos da IA ===
-      if (data.detectedFormation) {
-        notify(`🧠 Esquema adversário: ${data.detectedFormation}`, 4000);
-      }
-
-      if (data.red) {
-        animateTeam('circle', data.red);
-        notify("✅ Time verde reposicionado taticamente!", 4000);
-      }
-
-      if (data.coachComment) {
-        setTimeout(() => {
-          notify(`🎙️ Mister: ${data.coachComment}`, 7000);
-        }, 1000);
-      }
-
-    } catch (err) {
-      console.error("AI analyze error:", err);
-      notify("❌ Erro na análise da IA! Verifique conexão.", 5000);
-    }
-
-    aiBtn.disabled = false;
-    aiBtn.textContent = "AI Análise";
-  });
-</script>
-
-<!-- Chat markup + script (mantido igual ao seu original) -->
-<!-- ... (se preferir, mantenho o bloco de chat original sem alterações) -->
-<script>
-/* === Controle de fullscreen e overlay === */
-const overlay = document.getElementById("fullscreen-overlay");
-const exitBtn = document.getElementById("exit-fullscreen-btn");
-
-function enterFullscreen() {
-  const field = document.documentElement; // página toda
-  if (field.requestFullscreen) field.requestFullscreen();
-  else if (field.webkitRequestFullscreen) field.webkitRequestFullscreen();
-  else if (field.msRequestFullscreen) field.msRequestFullscreen();
-  overlay.style.display = "none"; // remove bloqueio
-}
-
-function exitFullscreen() {
-  if (document.exitFullscreen) document.exitFullscreen();
-  else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-  else if (document.msExitFullscreen) document.msExitFullscreen();
-}
-
-overlay.addEventListener("click", enterFullscreen);
-exitBtn.addEventListener("click", exitFullscreen);
-
-document.addEventListener("fullscreenchange", () => {
-  if (!document.fullscreenElement) {
-    overlay.style.display = "flex"; // volta a aparecer quando sai do fullscreen
-  }
-});
-</script>
-<!-- === Chat do Treinador Português === -->
+<!-- Botões -->
+<div id="fullscreen-overlay"
+  style="position:fixed;left:0;top:0;width:100vw;height:100vh;
+         background:rgba(0,0,0,0.7);color:#fff;display:flex;
+         align-items:center;justify-content:center;z-index:10055;
+         font-size:2em;cursor:pointer;">
+  Toque para entrar na Mesa Tática
+</div>
+
+<button id="exit-fullscreen-btn" class="force-bottom"
+  style="position:fixed;top:330px;left:400px;z-index:10000;
+         font-size:0.9em;padding:10px 18px;border-radius:8px;
+         background:#222;color:#fff;border:none;cursor:pointer;
+         box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+  Sair (x)
+</button>
+
+<button id="ai-analise-btn" class="force-bottom"
+  style="position:fixed;top:330px;left:180px;z-index:10000;
+         font-size:0.9em;padding:10px 18px;border-radius:8px;
+         background:#1E90FF;color:#fff;border:none;cursor:pointer;
+         box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+  Análise IA
+</button>
+
+<button id="pen-path-btn" class="force-bottom"
+  style="position:fixed;top:330px;left:20px;z-index:10000;
+         font-size:0.9em;padding:10px 18px;border-radius:8px;
+         background:#222;color:#fff;border:none;cursor:pointer;
+         box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+  ✎ Desenho Tático
+</button>
+
+<button id="treino-btn" class="force-bottom"
+  style="position:fixed;top:330px;left:290px;z-index:10000;
+         font-size:0.9em;padding:10px 18px;border-radius:8px;
+         background:#28a745;color:#fff;border:none;cursor:pointer;
+         box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+  🏋️ Treino
+</button>
+
+
+<a href="https://api.whatsapp.com/send?text=Check%20this%20out:%20https://www.osinvictos.com.br/dashboard/guaranifc/"
+   target="_blank"
+   style="text-decoration:none;">
+  <button class="force-bottom"
+    style="position:fixed;top:370px;left:20px;z-index:10000;
+           font-size:0.9em;padding:10px 18px;border-radius:8px;
+           background:#222;color:#fff;border:none;cursor:pointer;
+           box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+    Convide via WhatsApp
+  </button>
+</a>
+
+<a href="#"
+   target="_blank"
+   style="text-decoration:none;">
+  <button class="force-bottom"
+    style="position:fixed;top:370px;left:220px;z-index:10000;
+           font-size:0.9em;padding:10px 18px;border-radius:8px;
+           background:#222;color:#fff;border:none;cursor:pointer;
+           box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+    Interagir em Tempo-Real!
+  </button>
+</a>
+
+<script src="js/core.js"></script> 
+<script src="js/aitatica.js"></script>
+<script src="js/fullscreen.js"></script>
+<script src="js/desenhotatico.js"></script>
+
+
+<!-- === Chat do Treinador Massimiliano Allegri=== -->
 <div id="chat-container" style="
-  position:fixed;bottom:20px;right:20px;width:300px;max-height:400px;
+  position:fixed;bottom:20px;right:50px;width:300px;height:70vh;
   background:rgba(0,0,0,0.8);color:#fff;border-radius:10px;
-  display:flex;flex-direction:column;overflow:hidden;z-index:10001;
+  flex-direction:column;overflow:hidden;z-index:10002;
   font-family:'Segoe UI',sans-serif;font-size:14px;">
 <div id="chat-header" style="background:#222;padding:10px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:8px;color:#fff;">
-  <img src="./img/escudo-guaranifc.png" alt="Zenon" style="width:24px;height:24px;border-radius:50%;">
-  Zenon (IA)
+  <img src="img/escudo-guaranifc.png" alt="Careca" style="width:24px;height:24px;border-radius:50%;">
+  Careca
 </div>
   <div id="chat-body" style="flex:1;overflow-y:auto;padding:10px;display:none;"></div>
   <div id="chat-input-area" style="display:none;border-top:1px solid #333;padding:6px;gap:4px;">
-    <input id="chat-input" type="text" placeholder="Fala com o mister..." 
+    <input id="chat-input" type="text" placeholder="Fala com o Allegri..." 
       style="flex:1;padding:6px;border:none;border-radius:6px;font-size:14px;">
     <button id="chat-send" style="background:#0066cc;color:#fff;border:none;
       border-radius:6px;padding:6px 10px;cursor:pointer;">Enviar</button>
   </div>
 </div>
-
-<script>
-/* ====== Chat logic - CORREÇÃO COMPLETA ====== */
-// Variáveis e elementos devem ser definidas uma única vez.
-const coachChat = document.getElementById('coach-chat'); // A caixa de chat principal
-const chatIcon = document.getElementById('chat-icon');   // O ícone flutuante
-const chatHeader = document.getElementById("chat-header");
-const chatBody = document.getElementById("chat-body");
-const chatInputArea = document.getElementById("chat-input-area");
-const chatInput = document.getElementById("chat-input");
-const chatSend = document.getElementById("chat-send");
-let chatOpen = false; // Estado do corpo interno do chat (true: aberto, false: minimizado)
-
-// ----------------------------------------------------
-// 1. Lógica para ABRIR (no clique do ícone flutuante)
-// ----------------------------------------------------
-if (chatIcon && coachChat) {
-    chatIcon.addEventListener('click', () => {
-        // ABRIR: Esconde o ícone e mostra a caixa principal
-        chatIcon.style.display = 'none';
-        coachChat.style.display = 'flex'; // Use 'flex' ou 'block' conforme seu CSS
-        
-        // Garante que o corpo e input estejam visíveis
-        chatOpen = true; 
-        if (chatBody) chatBody.style.display = 'block';
-        if (chatInputArea) chatInputArea.style.display = 'flex';
-    });
-}
-
-// ----------------------------------------------------
-// 2. Lógica para MINIMIZAR/FECHAR (no clique do cabeçalho)
-// ----------------------------------------------------
-chatHeader.addEventListener("click", () => {
-    chatOpen = !chatOpen;
-    
-    // Alterna a visibilidade do corpo e input (Minimização interna)
-    chatBody.style.display = chatOpen ? "block" : "none";
-    chatInputArea.style.display = chatOpen ? "flex" : "none";
-    
-    // NOVIDADE: Se o conteúdo for minimizado (chatOpen=false), FECHA a caixa principal
-    if (!chatOpen) {
-        coachChat.style.display = 'none'; // Esconde a caixa de chat
-        chatIcon.style.display = 'flex';  // Mostra o ícone flutuante de volta
-    }
-});
-
-
-// ----------------------------------------------------
-// 3. Funções de Chat e API (Permanece quase igual)
-// ----------------------------------------------------
-const url_render = 'https://guaranifc.onrender.com';
-
-function appendMessage(sender, text){
-    // ... (sua função appendMessage)
-    const msg = document.createElement("div");
-    msg.style.marginBottom = "8px";
-    msg.innerHTML = sender === "user"
-        ? `<div style="text-align:right;"><span style="background:#0066cc;padding:6px 10px;border-radius:8px;display:inline-block;">${text}</span></div>`
-        : `<div style="text-align:left;"><span style="background:#333;padding:6px 10px;border-radius:8px;display:inline-block;">${text}</span></div>`;
-    chatBody.appendChild(msg);
-    chatBody.scrollTop = chatBody.scrollHeight;
-}
-
-chatSend.addEventListener("click", async ()=>{
-    const message = chatInput.value.trim();
-    if (!message) return;
-    appendMessage("user", message);
-    chatInput.value = "";
-    try {
-        const res = await fetch(`https://guaranifc.onrender.com/api/chat`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-            message: message  // envia o texto que o usuário digitou
-         })
-    });
-        const data = await res.json();
-        appendMessage("bot", data.reply || "O mister ficou em silêncio...");
-    } catch(e){
-        appendMessage("bot","Erro de comunicação com o mister.");
-        console.error(e);
-    }
-});
-
-chatInput.addEventListener("keydown", (e)=>{
-    if(e.key==="Enter"){ chatSend.click(); }
-});
-</script>
-<!-- === WebSocket: sincroniza jogadores em tempo real === -->
-<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
-<script>
-  socket.on("connect", () => {
-    console.log("📡 Conectado ao servidor WebSocket");
-  });
-
-  socket.on("disconnect", () => {
-    console.log("🔌 Desconectado do servidor");
-  });
-
-  // 🔴 Quando o servidor emitir uma nova análise tática
-  socket.on("tactical-analysis", (data) => {
-    console.log("📊 Atualização tática recebida:", data);
-
-    // Atualiza jogadores (ex: time verde/red)
-    if (data.red) {
-      for (const p of data.red) {
-        const el = document.getElementById("circle" + p.id);
-        if (el) {
-          el.style.transition = "left 1s ease, top 1s ease";
-          el.style.left = p.left + "px";
-          el.style.top = p.top + "px";
-        }
-      }
-    }
-
-    // Mostra a fala do Mister
-    if (data.coachComment) {
-      const n = document.getElementById("ai-notification");
-      if (n) {
-        n.textContent = `🎙️ ${data.coachComment}`;
-        n.style.display = "block";
-        setTimeout(() => (n.style.display = "none"), 5000);
-      }
-    }
-  });
-
-// === Sincroniza jogadores em tempo real ===
-socket.on("player-move", (data) => {
-  const el = document.getElementById(data.id);
-  if (el) {
-    el.style.transition = "left 0.3s linear, top 0.3s linear";
-    el.style.left = data.left + "px";
-    el.style.top = data.top + "px";
-  }
-});
-
-socket.on("ball-move", (data) => {
-  const el = document.getElementById(data.id);
-  if (el) {
-    el.style.transition = "left 0.2s linear, top 0.2s linear";
-    el.style.left = data.left + "px";
-    el.style.top = data.top + "px";
-  }
-});
-</script>
+  <div id="logo-container">
+      <model-viewer src="../../assets/logo.glb"
+        alt="Logo 3D"
+        shadow-intensity="1"
+        camera-controls
+        auto-rotate
+        ar>
+      </model-viewer>
+  </div>
+<script src="js/chat.js"></script>
+<script src="js/websocket.js"></script>
 <div id="tactical-status" style="
   position:fixed;
   top:20px;
@@ -795,6 +204,108 @@ socket.on("ball-move", (data) => {
   display:none;
   transition:opacity 0.3s ease;
 "></div>
+<script src="js/voice.js"></script>
+<!-- === HUD TÁTICO AVANÇADO === -->
+<div id="tactical-hud" style="
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  width: 230px;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  text-align: left;
+  line-height: 1.4;
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 0 10px rgba(0,0,0,0.6);
+  display: none;
+  z-index: 10005;
+">
+  <b>📊 Inteligência Tática</b><br>
+  <span id="hud-formations">Adversário: ? | Palmeiras: ?</span><br>
+  <span id="hud-phase">Fase: ?</span><br>
+  <span id="hud-block">Bloco: ? | Compactação: ?</span>
+</div>
 
+<!-- SCORE HUD -->
+<div id="score-hud" style="position:fixed;top:20px;right:20px;z-index:10050;display:flex;gap:10px;align-items:center;">
+  
+  <!-- ⭐ Pontos -->
+  <button id="star-points" style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.7);color:#ffd700;border:1px solid rgba(255,255,255,0.2);padding:6px 10px;border-radius:10px;cursor:pointer;">
+    ⭐ <span id="points-value" style="color:#ffd700;font-weight:700;">0</span>
+  </button>
+
+  <!-- ✨ Gols pró -->
+  <div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.7);color:#c0c0c0;border:1px solid rgba(255,255,255,0.2);padding:6px 10px;border-radius:10px;">
+    ✨ <span id="goals-value" style="color:#c0c0c0;font-weight:700;">0</span>
+  </div>
+
+</div>
+
+<div id="ranking-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10060;
+  align-items:center;justify-content:center;">
+  <div style="width:min(92vw,560px);background:#121212;color:#fff;border:1px solid #333;border-radius:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);padding:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h3 style="margin:0;font-size:18px;">🏆 Ranking Invicto</h3>
+      <button id="ranking-close" style="background:transparent;border:none;color:#fff;font-size:20px;cursor:pointer;">×</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div style="background:#1e1e1e;padding:12px;border-radius:10px;">
+        <h4 style="margin:0 0 8px 0;font-size:14px;">Cadastrar/Entrar</h4>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <input id="rk-name" type="text" placeholder="Seu nome" style="padding:8px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+          <input id="rk-email" type="email" placeholder="Seu e-mail" style="padding:8px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+          <input id="rk-pass" type="password" placeholder="Senha" style="padding:8px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+          <button id="rk-save" style="background:#28a745;border:none;border-radius:8px;padding:10px;color:#fff;cursor:pointer;">
+            Salvar/Atualizar Pontuação
+          </button>
+        </div>
+      </div>
+      <div style="background:#1e1e1e;padding:12px;border-radius:10px;">
+        <h4 style="margin:0 0 8px 0;font-size:14px;">Tabela</h4>
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <button class="rk-tab" data-range="daily"  style="flex:1;background:#222;border:1px solid #333;color:#fff;border-radius:8px;padding:6px;cursor:pointer;">Diário</button>
+          <button class="rk-tab" data-range="weekly" style="flex:1;background:#222;border:1px solid #333;color:#fff;border-radius:8px;padding:6px;cursor:pointer;">Semanal</button>
+          <button class="rk-tab" data-range="monthly" style="flex:1;background:#222;border:1px solid #333;color:#fff;border-radius:8px;padding:6px;cursor:pointer;">Mensal</button>
+        </div>
+        <div id="rk-list" style="max-height:240px;overflow:auto;font-size:13px;line-height:1.5;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== POPUP INVICTO ===== -->
+<div id="popup-invicto">
+  <button id="close-popup-invicto">×</button>
+
+  <img src="img/guaranifc.png" alt="Invicto 2025" class="popup-img">
+
+  <h3 class="popup-title">Invicto 2025</h3>
+  <p class="popup-price">R$99 / $25</p>
+
+  <div class="popup-actions">
+      <a class="popup-link email"
+        href="mailto:prod@osinvictos.com.br?subject=Pedido%20Camisa%20Invicto">
+        ✉️ Faça seu pedido!
+      </a><br><br>
+
+      <a class="popup-link whatsapp"
+        href="https://wa.me/p/24422287794140551/5519988108063" target="_blank">
+        🟢 Comprar via WhatsApp
+      </a>
+  </div>
+</div>
+
+<!-- Ícone flutuante scom notificação -->
+<div id="invicto-icon">
+  👕
+  <span id="invicto-notify"></span>
+</div>
+
+<script src="js/treino.js"></script>
 </body>
 </html>

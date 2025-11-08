@@ -260,7 +260,11 @@
         #circle11 { left: 320px; top: 40px; background: #000000; }
         #circle23 { left: 620px; top: 150px; background: #660000; }
         #circle24 { left: 420px; top: 40px; background: #ffffff; }
-        body { margin: 0; overflow: hidden; background-color: green; }
+
+        html, body {
+          margin: 0;
+          overflow: auto; /* iOS bloqueia fullscreen se overflow:hidden */
+        }
 
 /* === Botão IA com spinner === */
 .ai-button {
@@ -341,5 +345,211 @@
   opacity: 0.6;
   cursor: wait;
 }
+
+#ai-notification {
+  transition: opacity 0.8s ease;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 1.5em;
+}
+#tactical-hud {
+  transition: opacity 0.8s ease, background 0.4s ease, z-index: 5;
+}
+
+    /* --- LOGO CENTRAL --- */
+#logo-container {
+  position: fixed;
+  bottom: 3px;
+  right: 20px;
+  width: 180px;
+  height: 180px;
+  z-index: 8000;
+  filter: drop-shadow(0 0 20px rgba(255,255,255,0.25));
+  pointer-events: auto;
+
+}
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      pointer-events: auto;
+      --environment-image: var(--cor-fundo);
+      --progress-bar-color: var(--cor-fundo);
+    }
+
+/* ==== POPUP CAMISA INVICTO ==== */
+#popup-invicto {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 250px;
+  height: 300px;
+  background: rgba(0,0,0,0.85);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.6);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 20005;
+  color: white;
+  font-family: 'Segoe UI', sans-serif;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity .4s ease, transform .4s ease;
+  pointer-events: none;
+}
+
+#popup-invicto.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+#close-popup-invicto {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.popup-img {
+  width: 180px;
+  margin-top: 10px;
+}
+
+.popup-title {
+  margin: 6px 0;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.popup-price {
+  font-size: 18px;
+  color: #00ff66;
+  margin: 4px 0 10px 0;
+}
+
+.popup-link {
+  background: #33aaff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  transition: .3s;
+}
+
+.popup-link:hover {
+  background: #2288ff;
+}
+/* ==== Ícone de trsigger do popup Invicto ==== */
+#invicto-icon {
+  position: fixed;
+  bottom: 15px;
+  right: 15px;
+  width: 55px;
+  height: 55px;
+  background: rgba(0,0,0,0.85);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 26px;
+  cursor: pointer;
+  z-index: 20000;
+  transition: transform 0.3s, background 0.3s;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+#invicto-icon:hover {
+  transform: scale(1.12);
+  background: rgba(0, 150, 255, 0.9);
+}
+/* ===== POPUP DO TREINADOR (IA) ===== */
+#coach-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  width: 350px;
+  padding: 18px;
+  background: rgba(0,0,0,0.90);
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 12px;
+  color: white;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 16px;
+  text-align: center;
+
+  z-index: 99999; /* FICA NA FRENTE DE TUDO */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s ease;
+}
+
+#coach-popup.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 70vh;
+}
+
+#chat-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+#chat-input-area {
+  display: flex;
+  border-top: 1px solid #333;
+  padding: 6px;
+  gap: 4px;
+  background: #111;
+}
+
+@supports (-webkit-touch-callout: none) {
+  #chat-container {
+    bottom: env(keyboard-inset-height, 0);
+  }
+}
+/* Detecta iPhone / Safari iOS */
+@supports (-webkit-touch-callout: none) {
+
+  /* Ajusta os botões fixos */
+  button,
+  #fullscreen-overlay,
+  #ai-analise-btn,
+  #pen-path-btn,
+  #treino-btn {
+    height: 38px !important;      /* deixa mais fino */
+    padding: 6px 10px !important; /* reduz padding */
+    font-size: 0.8em !important;
+  }
+
+  /* Opcional: empurra os botões para cima do "safe area" */
+  .ios-bottom-fix {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Se quiser jogar os botões todos para o bottom */
+  .force-bottom {
+    position: fixed !important;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    top: auto !important;
+  }
+}
+
 
 

@@ -929,48 +929,63 @@ socket.on("disconnect", async () => {
 });
 });// ✅ Socket real-time para aprimoramento esportivo
 
-// === Endpoint de chat do Careca (usando OpenRouter) ===
+// === Endpoint de chat do Careca (usando OpenAI) ===
+import OpenAI from "openai"; // ⬅️ adicione no topo do arquivo server.js
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY, // coloque no .env no Render
+});
+
 app.post("/api/chat", async (req, res) => {
   try {
     const { message } = req.body;
 
-    if (!apiKey) {
-      return res.status(500).json({ error: "OPENROUTER_KEY ausente no servidor" });
+    if (!client.apiKey) {
+      return res.status(500).json({ error: "OPENAI_API_KEY ausente no servidor" });
     }
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: "Você é CARECA, ex-centroavante camisa 9 do Guarani. Sua comunicação é prática, confiante e de jogador experiente. Fala com mentalidade de artilheiro e liderança natural: objetivo, tranquilo, porém assertivo. Suas orientações se baseiam em leitura de jogo, movimentação inteligente e antecipação dentro da área. Você valoriza o simples bem feito: tabelar, se desmarcar, atacar o espaço certo e finalizar com convicção. Você incentiva, motiva e orienta: 'gol é consequência do posicionamento e da decisão correta'. Usa linguagem de boleiro, mas educada. Passa confiança, serenidade e foco no resultado. Quando orienta o usuário, você explica o porquê da escolha tática e onde o jogador deve se posicionar para criar superioridade. Sua prioridade é: *calma, inteligência e eficiência*. Sempre transmite mentalidade vencedora, orgulho pelo Guarani e respeito pelo futebol." },
-          { role: "user", content: message }
-        ],
-        temperature: 0.8,
-        max_tokens: 180
-      })
+    const completion = await client.chat.completions.create({
+      model: "gpt-5",        // 🚀 modelo mais novo
+      max_tokens: 180,
+      temperature: 0.8,
+      messages: [
+        {
+          role: "system",
+          content: `
+Você é **CARECA**, ex-centroavante camisa 9 do Guarani.
+Fala com mentalidade de artilheiro, direto, simples e confiante.
+Fala como boleiro inteligente: posicionamento, atacar espaço, antecipação.
+Quando orientar, diga o motivo tático. 
+Mantenha sempre: CALMA, EFICIÊNCIA, DECISÃO CERTA.
+          `
+        },
+        {
+          role: "user",
+          content: message
+        }
+      ],
     });
 
-    const data = await response.json();
-    const reply = data?.choices?.[0]?.message?.content || "O Careca ficou em silêncio...";
+    const reply = completion.choices[0].message.content;
 
-    // --- Detecta pedido de mudança de formação no texto do usuário ---
+    // Detecta formação no texto do usuário
     function extractFormation(text) {
-    const formationRegex = /\b(4-4-2|4-3-3|4-2-3-1|3-5-2|5-4-1|4-5-1|4-2-4|3-4-3|5-3-2)\b/gi;
-    const match = text.match(formationRegex);
-    return match ? match[0] : null;
+      const regex = /\b(4-4-2|4-3-3|4-2-3-1|3-5-2|5-4-1|4-5-1|4-2-4|3-4-3|5-3-2)\b/gi;
+      const match = text.match(regex);
+      return match ? match[0] : null;
     }
 
-    const requestedFormation = extractFormation(message);
-    res.json({ reply, formationRequested: requestedFormation || null });
+    res.json({
+      reply,
+      formationRequested: extractFormation(message) || null
+    });
 
   } catch (err) {
     console.error("Erro no /api/chat:", err);
-    res.status(500).json({ error: "Falha na comunicação com o ", details: err.message });
+    res.status(500).json({
+      error: "Falha na comunicação com OpenAI",
+      details: err.message
+    });
   }
 });
 

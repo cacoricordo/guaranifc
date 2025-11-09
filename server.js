@@ -803,66 +803,18 @@ app.post("/ai/analyze", async (req, res) => {
 app.post("/ai/vision-tactic", async (req, res) => {
   try {
     const { fieldImage, possession, ball, green, black } = req.body;
-    // ✅ Formações permitidas (Guarani e adversário)
+
     const allowedFormations = [
       "4-4-2", "4-3-3", "4-2-3-1", "4-2-4",
       "3-5-2", "5-4-1", "4-5-1", "3-4-3", "5-3-2", "4-1-4-1"
     ];
-    const apiKey = process.env.OPENROUTER_KEY;
 
+    const apiKey = process.env.OPENROUTER_KEY;
     if (!apiKey) return res.status(500).json({ error: "OPENROUTER_KEY ausente" });
 
-    console.log("📸 Imagem recebida, enviando para análise Vision...");
-    
-// =============================
-// 1) PROCESSA RETORNO DO OPENROUTER
-// =============================
-const data = await response.json();
-console.log("📦 Resposta Vision:", JSON.stringify(data, null, 2));
+    console.log("📸 Enviando imagem para análise Vision...");
 
-let parsed = null;
-try {
-  const raw = data?.choices?.[0]?.message?.content;
-
-  if (!raw) {
-    return res.json({
-      error: "Falha na análise visual: sem conteúdo",
-      opponentFormation: null
-    });
-  }
-
-	parsed = JSON.parse(raw);
-
-	} catch (err) {
-	console.log("❌ Vision retornou algo inválido / não JSON:", data);
-	return res.json({
-		error: "Falha na análise visual: JSON inválido",
-		opponentFormation: null
-	});
-	}
-
-	console.log("🧠 Visão interpretou:", parsed);
-
-	// =============================
-	// 2) AQUI SIM, parsed existe ✅
-	// =============================
-	let formationGuarani =
-	parsed?.formationGuarani ??
-	parsed?.formation_guarani ??
-	null;
-
-    // 2) calcula DEF/MID/ATT por terços (fallback geométrico)
-    const { def, mid, att } = classifyByThird(green);
-    const formationThirds = detectFormationByThirds(def, mid, att);
-
-    console.log(`📊 TERÇOS: DEF:${def} MID:${mid} ATT:${att} => ${formationThirds}`);
-    
-    // 3) fallback geométrico se visão não detectar ou retornar UNKNOWN
-    if (!formationGuarani || formationGuarani === "UNKNOWN") {
-      formationGuarani = formationThirds;
-    }
-
-
+    // 1️⃣ ENVIA PARA A IA VISUAL
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -874,98 +826,88 @@ try {
         messages: [
           {
             role: "system",
-            content:  `
-Você é um analista tático. "Soccer's Scout analyst" Analise APENAS o time BRANCO (adversário) na imagem. 
-Ignore o time VERMELHO (Guarani) para a formação do adversário.
+            content: `
+Analista tático. Analise apenas o time BRANCO (adversário).
+Retorne EXCLUSIVAMENTE JSON, sem texto extra.
 
-LEGENDA DA IMAGEM:
-- Círculos BRANCOS COM NÚMEROS VERDES = adversário
-- Círculos VERDES = Guarani
-- Círculo BRANCO pequeno = bola
-- Dimensão do campo: 600x300
-
-CONDIÇÕES:
-- O adversário (branco) DEFENDE à ESQUERDA e ATACA da ESQUERDA para a DIREITA.
-- NÃO conte o goleiro na formação (apenas linhas de linha/linha/linha).
-- Use SOMENTE estas formações para o adversário:
-  "4-4-2", "4-3-3", "4-2-3-1", "4-2-4", "3-5-2", "5-4-1", "4-5-1", "3-4-3", "5-3-2", "4-1-4-1"
-- Se estiver incerto, escolha a mais provável entre as listas acima (nada fora dessa lista).
-- Retorne APENAS JSON puro, sem texto extra.
-
-FORMATO EXATO:
+Formato:
 {
   "formationOpponent": "4-4-2",
   "formationGuarani": "4-3-3",
   "phase": "ataque" | "defesa" | "transicao",
-  "comment": "texto mediano"
+  "comment": "texto"
 }
 `
           },
           {
             role: "user",
-  content: [
-    { type: "text", text: `A posse é do time ${possession}.` },
-    { type: "text", text: `Coordenadas normalizadas (600x300): adversário(preto)=${JSON.stringify(black)}, Guarani(vermelho)=${JSON.stringify(green)}, bola=${JSON.stringify(ball)}.` },
-    { type: "text", text: `Analise a FORMAÇÃO APENAS do time preto com base nas posições e na imagem.` },
-    { type: "input_image", image_data: fieldImage }
-  ]
+            content: [
+              { type: "text", text: `Posse: ${possession}` },
+              { type: "text", text: `Coordenadas (600x300) adversário:${JSON.stringify(black)}, guarani:${JSON.stringify(green)}, bola:${JSON.stringify(ball)}` },
+              { type: "input_image", image_data: fieldImage }
+            ]
           }
         ]
       })
     });
 
-console.log("🧠 Visão interpretou:", parsed);
+    // 2️⃣ SÓ AQUI PODE FAZER .json()
+    const data = await response.json();
+    console.log("📦 Vision retornou:", JSON.stringify(data, null, 2));
 
-// ✅ Aceita camelCase e snake_case enviados pela Vision
-let formationOpponent =
-  parsed?.formationOpponent ??
-  parsed?.formation_opponent ??
-  null;
+    // 3️⃣ Parseia o JSON que a IA devolveu
+    let parsed = null;
+    try {
+      parsed = JSON.parse(data?.choices?.[0]?.message?.content ?? "{}");
+    } catch (err) {
+      console.log("❌ Vision retornou texto inválido, ignorado.");
+    }
 
-// ✅ Valida formação detectada
-if (!allowedFormations.includes(formationOpponent)) {
-  console.log("⚠️ Vision não reconheceu formação, usando detector geométrico.");
-  const blackPlayers = Array.isArray(black) ? black : [];
-  formationOpponent = detectOpponentFormationAdvanced(blackPlayers) ?? "4-4-2";
-}
+    console.log("🧠 JSON interpretado:", parsed);
 
-const phase = parsed?.phase ?? "defesa";
+    let formationGuarani =
+      parsed?.formationGuarani ??
+      parsed?.formation_guarani ??
+      null;
 
-// Move o Guarani no campo usando a sua formação
-const { greenAI } = buildGreenFromFormation(
-  formationGuarani,
-  ball,
-  phase === "ataque" ? "ataque" : "defesa"
-);
+    const { def, mid, att } = classifyByThird(green);
+    const formationThirds = detectFormationByThirds(def, mid, att);
 
-// ✅ Checa bloco defensivo de emergência
-const emergency = emergencyBlockIfUnderPressure(ball, black);
-if (emergency) {
-  return res.json({
-    opponentFormation,
-    detectedFormation: formationGuarani,  // agora existe
-    phase: "defesa",
-    bloco: "BAIXO",
-    compactacao: "ULTRA",
-    green: emergency,
-    coachComment: "Calma! Fechamos duas linhas de três dentro da área! Marca o homem e protege o gol!"
-  });
-}
+    if (!formationGuarani || formationGuarani === "UNKNOWN") {
+      formationGuarani = formationThirds;
+    }
 
-// ✅ Resposta final para o frontend
-return res.json({
-  opponentFormation: formationOpponent,
-  detectedFormation: formationGuarani,
-  phase: parsed?.phase ?? "defesa",
-  green: greenAI,
-  coachComment: parsed?.comment || ""
-});
+    let formationOpponent =
+      parsed?.formationOpponent ??
+      parsed?.formation_opponent ??
+      null;
+
+    if (!allowedFormations.includes(formationOpponent)) {
+      const blackPlayers = Array.isArray(black) ? black : [];
+      formationOpponent = detectOpponentFormationAdvanced(blackPlayers) ?? "4-4-2";
+    }
+
+    const phase = parsed?.phase ?? "defesa";
+    const { greenAI } = buildGreenFromFormation(
+      formationGuarani,
+      ball,
+      phase === "ataque" ? "ataque" : "defesa"
+    );
+
+    return res.json({
+      opponentFormation,
+      detectedFormation: formationGuarani,
+      phase,
+      green: greenAI,
+      coachComment: parsed?.comment ?? ""
+    });
 
   } catch (err) {
     console.error("❌ Erro /ai/vision-tactic:", err);
-    res.status(500).json({ error: "Falha na análise visual", details: err.message });
+    return res.status(500).json({ error: "Falha na análise visual", details: err.message });
   }
 });
+
 
 
 // === Socket.IO realtime ===

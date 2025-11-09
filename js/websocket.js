@@ -61,32 +61,6 @@ socket.on("player-move", (data) => {
   el.style.top  = data.top  + "px";
 });
 
-socket.on("path_draw", (data) => {
-
-  // ignore eventos de outras salas
-  if (data.room !== window.currentRoomCode) return;
-
-  if (!data.path || !Array.isArray(data.path)) return;
-
-  ctx.beginPath();
-  for (let i = 0; i < data.path.length; i++) {
-    const [x, y] = data.path[i];
-    (i === 0 ? ctx.moveTo : ctx.lineTo)(x, y);
-  }
-  ctx.strokeStyle = "#ff3333";
-  ctx.lineWidth = 4;
-  ctx.stroke();
-  ctx.closePath();
-
-  // limpa depois de X ms
-  setTimeout(() => {
-    ctx.save();
-    ctx.globalCompositeOperation = "destination-out";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.restore();
-  }, 4000);
-});
-
 // ==== RECEBE path_draw da sala ====
 socket.on("path_draw", (data) => {
 

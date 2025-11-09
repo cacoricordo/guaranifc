@@ -108,6 +108,17 @@ chatInput.addEventListener("keydown", (e)=>{
   }
 });
 
+let lastGoalTime = 0;
+
+window.addEventListener("goal:scored", (ev) => {
+  const now = Date.now();
+  if (now - lastGoalTime < 2000) return; // evita spam de gol
+  lastGoalTime = now;
+
+  appendMessage("bot", "GOOOOOOOOOOOOOOOOOL DO BUGRE!!! 💚⚽");
+});
+
+
 // expande o chat quando o teclado aparece (mobile)
 chatInput.addEventListener("focus", () => {
   openChat();

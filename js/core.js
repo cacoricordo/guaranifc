@@ -1,11 +1,5 @@
 /* ===== CORE: movimento, socket, física e AI analyze ===== */
-const socket = io("https://guaranifc.onrender.com", {
-  transports: ["websocket", "polling"],
-  reconnection: true,
-  reconnectionAttempts: Infinity,
-  reconnectionDelay: 2000,
-});
-window.socket = socket;
+
 
 // === Utilitário: throttle ===
 function throttle(fn, delay) {
@@ -17,6 +11,25 @@ function throttle(fn, delay) {
       fn(...args);
     }
   };
+}
+
+// === DIMENSÃO DO CAMPO (pegando pelo elemento #field ou fallback para viewport) ===
+const field = document.getElementById("field") || document.body;
+window.FIELD_WIDTH  = field.clientWidth  || window.innerWidth;
+window.FIELD_HEIGHT = field.clientHeight || window.innerHeight;
+const FIELD_RIGHT_GOAL_X = FIELD_WIDTH - 20; // ajuste conforme seu campo
+
+function isGoalRight(ballEl) {
+  const goalEl = document.getElementById("gol2-square");
+  if (!ballEl || !goalEl) return false;
+
+  const ball = ballEl.getBoundingClientRect();
+  const goal = goalEl.getBoundingClientRect();
+
+  const passedLine = ball.right >= goal.left;                // passou da linha do gol
+  const withinPosts = ball.top >= goal.top && ball.bottom <= goal.bottom; // entre as traves
+
+  return passedLine && withinPosts;
 }
 
 const circles = {};
@@ -51,16 +64,17 @@ for (let i = 1; i <= 24; i++) {
 }
 
 // === Física da bola ===
-const emitBallMove = throttle((id, left, top) => {
-  socket.emit("ball-move", { id, left, top });
+const emitBallMove = throttle((id, left, top, room ) => {
+	if (!window.currentRoomCode) return;
+	socket.emit("ball-move", { id, left, top, room: window.currentRoomCode });
 }, 50);
 
 const ball = document.getElementById("circle24");
 
 // === Detecção de colisão ===
-function checkCollision(playerEl, ballEl) {
-  const pr = playerEl.getBoundingClientRect();
-  const br = ballEl.getBoundingClientRect();
+function checkCollision(player, ball) {
+  const pr = player.getBoundingClientRect();
+  const br = ball.getBoundingClientRect();
   const dx = pr.left - br.left;
   const dy = pr.top - br.top;
   const distance = Math.sqrt(dx * dx + dy * dy);
@@ -89,10 +103,16 @@ function moveElement(id, x, y) {
   el.style.top = y + "px";
 
   // Se for a bola, apenas emite o movimento e sai (sem colisão)
-  if (id === 24) {
-    emitBallMove("circle24", x, y);
+if (id === 24) {
+    emitBallMove("circle24", x, y, window.currentRoomCode);
+
+    // ✅ ATIVA física sempre que a bola for arrastada
+    ballVelocity.x = 0;
+    ballVelocity.y = 0;
+    ballMoving = true;
+
     return;
-  }
+}
 
   // detecta colisão jogador-bola
   if (checkCollision(el, ball)) {
@@ -116,6 +136,7 @@ function moveElement(id, x, y) {
 // === Loop de física (inércia e atrito) ===
 function updateBallPhysics() {
   if (!ballMoving) return;
+  console.log("⬅️ Loop da bola rodando", ballVelocity);
 
   const ball = document.getElementById("circle24");
   if (!ball) return;
@@ -137,7 +158,7 @@ function updateBallPhysics() {
   }
 
   // mantém dentro do campo (limites de tela)
-  const field = document.getElementById("field") || document.body;
+  const field = document.getElementById("background-square"); // <-- usa o campo real
   const maxX = (field.clientWidth || window.innerWidth) - 40;
   const maxY = (field.clientHeight || window.innerHeight) - 40;
   bx = Math.max(0, Math.min(bx, maxX));
@@ -146,18 +167,39 @@ function updateBallPhysics() {
   // aplica posição
   ball.style.left = bx + "px";
   ball.style.top = by + "px";
+  console.log("Posição da bola:", bx, by);
+
+  // ✅ DETECÇÃO DE GOL (bola passou COMPLETAMENTE do gol direito)
+  if (isGoalRight(ball)) {
+    console.log("✅ GOL DETECTADO");
+
+    window.dispatchEvent(
+      new CustomEvent("goal:scored", { detail: { side: "right" } })
+    );
+
+    ballMoving = false; // para a bola após o gol
+    return;            // evita disparar múltiplos gols no mesmo lance
+  }
 
   // envia posição ao servidor
-  emitBallMove("circle24", bx, by);
+  emitBallMove("circle24", bx, by, window.currentRoomCode);
 }
 
 // === Atualiza a física a cada frame ===
 setInterval(updateBallPhysics, 30);
 
 // === Movimento dos jogadores (desktop + touch) ===
-const emitPlayerMove = throttle((id, left, top) => {
-  socket.emit("player-move", { id, left, top });
-}, 50);
+const emitPlayerMove = throttle((id, left, top, room) => {
+  if (!window.currentRoomCode) {
+    console.log("⛔ não está em sala, não emitir");
+    return;
+  }
+
+  const payload = { id, left, top, room: window.currentRoomCode };
+  console.log("🚀 ENVIANDO player-move:", payload);
+  socket.emit("player-move", payload);
+}, 40);
+
 
 document.addEventListener("mousemove", (e) => {
   if (!activeId) return;
@@ -165,7 +207,7 @@ document.addEventListener("mousemove", (e) => {
   const x = e.clientX - dragState[i].offsetX;
   const y = e.clientY - dragState[i].offsetY;
   moveElement(i, x, y);
-  emitPlayerMove("circle" + i, x, y);
+  emitPlayerMove("circle" + i, x, y, window.currentRoomCode);
 });
 
 document.addEventListener("touchmove", (e) => {
@@ -175,7 +217,7 @@ document.addEventListener("touchmove", (e) => {
   const x = touch.clientX - dragState[i].offsetX;
   const y = touch.clientY - dragState[i].offsetY;
   moveElement(i, x, y);
-  emitPlayerMove("circle" + i, x, y);
+  emitPlayerMove("circle" + i, x, y, window.currentRoomCode);
   e.preventDefault();
 }, { passive: false });
 
@@ -188,72 +230,11 @@ function endDrag() {
 document.addEventListener("mouseup", endDrag);
 document.addEventListener("touchend", endDrag);
 
-// === Recebe posições dos jogadores de outros clientes ===
-socket.on("update_circle", (data) => {
-  const el = document.getElementById("circle" + data.id);
-  if (el) {
-    el.style.left = data.left + "px";
-    el.style.top = data.top + "px";
-  }
-});
-
 
 const canvas = document.getElementById("trace-canvas");
 const ctx = canvas?.getContext("2d", { willReadFrequently: true });
 
-  // === RECEBE DESENHOS DE OUTROS USUÁRIOS ===
-  if (window.socket) {
-    socket.on("path_draw", (data) => {
-      if (!data || !Array.isArray(data.path)) return;
-      const rect = canvas.getBoundingClientRect();
-
-      // Reconstrói coordenadas reais conforme o tamanho do canvas local
-      const scaled = data.path.map(([nx, ny]) => [nx * rect.width, ny * rect.height]);
-
-      // Cor por camada tática
-      const color = data.layer === "defesa" 
-        ? "rgba(51,153,255,0.9)"
-        : data.layer === "bolaparada"
-        ? "rgba(255,215,0,0.9)"
-        : "rgba(255,51,51,0.9)"; // ataque padrão
-
-      // Desenha suavizado e aplica fade local
-      ctx.beginPath();
-      ctx.moveTo(scaled[0][0], scaled[0][1]);
-      for (let i = 1; i < scaled.length - 1; i++) {
-        const xc = (scaled[i][0] + scaled[i + 1][0]) / 2;
-        const yc = (scaled[i][1] + scaled[i + 1][1]) / 2;
-        ctx.quadraticCurveTo(scaled[i][0], scaled[i][1], xc, yc);
-      }
-      ctx.lineTo(scaled[scaled.length - 1][0], scaled[scaled.length - 1][1]);
-      ctx.strokeStyle = color;
-      ctx.shadowColor = color.replace("0.9", "0.3");
-      ctx.shadowBlur = 6;
-      ctx.lineWidth = 4;
-      ctx.stroke();
-      ctx.closePath();
-
-      // 🔥 fade automático em 5s (sincronizado visualmente)
-      setTimeout(() => {
-        ctx.save();
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.globalAlpha = 0.15;
-        ctx.beginPath();
-        ctx.moveTo(scaled[0][0], scaled[0][1]);
-        for (let i = 1; i < scaled.length - 1; i++) {
-          const xc = (scaled[i][0] + scaled[i + 1][0]) / 2;
-          const yc = (scaled[i][1] + scaled[i + 1][1]) / 2;
-          ctx.quadraticCurveTo(scaled[i][0], scaled[i][1], xc, yc);
-        }
-        ctx.lineTo(scaled[scaled.length - 1][0], scaled[scaled.length - 1][1]);
-        ctx.stroke();
-        ctx.closePath();
-        ctx.restore();
-      }, 5000);
-    });
-  }
-
-  function animateTeam(prefix, positions) {
+   function animateTeam(prefix, positions) {
     for (const p of positions) {
       if (p.id === 23) continue;
       const el = document.getElementById(prefix + p.id);

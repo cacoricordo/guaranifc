@@ -190,6 +190,12 @@ function scoreWithHelp(attempt){
     }
   });
 
+  // === Pop-up oferecendo ajuda do treinador ===
+	function showAskForTraineeToHelp() {
+	notifyTop("🧠 Quer ajuda do treinador? Escreva no chat: 'monte um 4-3-3'");
+	}
+
+
   // ======== RANKING ========
 
   function renderRanking(list){
@@ -210,16 +216,22 @@ function scoreWithHelp(attempt){
     $rkList.innerHTML = rows;
   }
 
-  async function fetchRanking(range="daily"){
-    try{
-      const res = await fetch(`${API_BASE}/ranking?range=${encodeURIComponent(range)}`);
-      const data = await res.json();
-      renderRanking(data?.top || []);
-    }catch(e){
-      console.error(e);
-      renderRanking([]);
-    }
+async function fetchRanking(range = "daily") {
+  const order = range === "daily" ? "updated_at" : "points";
+
+  const { data, error } = await supabase
+    .from("ranking")
+    .select("*")
+    .order(order, { ascending: false })
+    .limit(30);
+
+  if (error) {
+    console.error(error);
+    renderRanking([]);
+  } else {
+    renderRanking(data);
   }
+}
 
   rkTabs.forEach(btn => btn.addEventListener("click", () => {
     rkTabs.forEach(b => b.style.background = "#222");
@@ -239,36 +251,52 @@ function scoreWithHelp(attempt){
   });
 
   $rkSave?.addEventListener("click", async () => {
-    const name  = ($rkName.value  || "").trim();
-    const email = ($rkEmail.value || "").trim();
-    const pass  = ($rkPass.value  || "").trim();
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-    if (!name || !email || !pass) {
-      notifyTop("Preencha nome, e-mail e senha.");
-      return;
-    }
+const supabase = createClient(
+  "https://pwaipoabevlfflqnqiqq.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3YWlwb2FiZXZsZmZscW5xaXFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2OTY3MTksImV4cCI6MjA3ODI3MjcxOX0.14SjVGvcsd4Uta-78t_nPkSSdnhOfuynct7Lh3Jqg64"
+);
 
-    try{
-      const res = await fetch(`${API_BASE}/ranking/score`, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({
-          name, email, pass,
-          points: state.points,
-          goals:  state.goals
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Falha ao salvar");
-      notifyTop("Pontuação salva no ranking! ✅");
-      // Recarrega a tabela atual
-      const current = rkTabs.find(b => b.style.background === "rgb(51, 51, 51)")?.dataset.range || "daily";
-      fetchRanking(current);
-    }catch(e){
-      console.error(e);
-      notifyTop("Erro ao salvar no ranking.");
-    }
+$rkSave?.addEventListener("click", async () => {
+  const name  = ($rkName.value  || "").trim();
+  const email = ($rkEmail.value || "").trim();
+  const pass  = ($rkPass.value  || "").trim();
+
+  if (!name || !email || !pass) {
+    notifyTop("Preencha nome, e-mail e senha.");
+    return;
+  }
+
+  // 1 — login / cadastro de usuário
+  const { data: authUser, error: authError } = await supabase.auth.signInWithPassword({
+    email,
+    password: pass,
+  }).catch(async () => {
+    return supabase.auth.signUp({ email, password: pass });
   });
 
+  if (authError) {
+    notifyTop("Erro na autenticação.");
+    console.error(authError);
+    return;
+  }
+
+  // 2 — upsert pontuação para esse usuário
+  const { error } = await supabase.from("ranking").upsert({
+    name,
+    email,
+    points: state.points,
+    goals:  state.goals,
+  });
+
+  if (error) {
+    notifyTop("Erro ao salvar no ranking.");
+    console.error(error);
+  } else {
+    notifyTop("Pontuação salva no ranking! ✅");
+    fetchRanking(currentRange);
+  }
+});
 })();
 

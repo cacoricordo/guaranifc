@@ -1,6 +1,11 @@
 // ==== Constantes do campo (mantém igual ao backend) ====
-const FIELD_WIDTH = 600;
-const FIELD_HEIGHT = 300;
+// window.FIELD_WIDTH = 600;
+// window.FIELD_HEIGHT = 300;
+
+// Usa o FIELD_WIDTH já criado no core.js
+// Se não existir, usa fallback 600x300
+const FIELD_WIDTH  = window.FIELD_WIDTH  ?? 600;
+const FIELD_HEIGHT = window.FIELD_HEIGHT ?? 300;
 
 // === Funções auxiliares ===
 function makeVisionSnapshot() {

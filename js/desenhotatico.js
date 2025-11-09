@@ -2,7 +2,7 @@
 (function(){
   const canvas = document.getElementById("trace-canvas");
   const penBtn = document.getElementById("pen-path-btn");
-  const socket = window.socket || (window.io ? io() : null);
+  const socket = window.socket;
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
 
@@ -100,7 +100,7 @@
     try { canvas.releasePointerCapture(pointerId); } catch (er) {}
     ctx.closePath();
     if (socket && currentPath.length > 1) {
-      socket.emit('path_draw', { path: currentPath });
+      socket.emit('path_draw', { path: currentPath, room: window.currentRoomCode });
     }
 
     setTimeout(() => {
@@ -149,7 +149,7 @@
     drawing = false;
     ctx.closePath();
 
-    if (socket && currentPath.length > 1) socket.emit('path_draw', { path: currentPath });
+    if (socket && currentPath.length > 1) socket.emit('path_draw', { path: currentPath, room: window.currentRoomCode });
     setTimeout(() => {
       ctx.save();
       ctx.globalCompositeOperation = "destination-out";
@@ -164,6 +164,12 @@
   // recebe e desenha paths de outros clientes (coord em CSS pixels)
   if (socket) {
     socket.on('path_draw', (data) => {
+		
+	  if (!window.currentRoomCode || data.room !== window.currentRoomCode) {
+      console.log("⛔ path ignorado (sala diferente)");
+      return;
+      }
+      
       if (!data || !Array.isArray(data.path) || data.path.length === 0) return;
       ctx.beginPath();
       for (let i = 0; i < data.path.length; i++) {

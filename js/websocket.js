@@ -1,6 +1,18 @@
-  socket.on("connect", () => {
-    console.log("📡 Conectado ao servidor WebSocket");
-  });
+const socket = window.socket || io();
+window.socket = socket;
+
+
+socket.on("connect", () => {
+  console.log("📡 Conectado ao servidor WebSocket");
+
+  // ⚠️ NUNCA zere o PIN aqui!
+  // Se já tem um PIN (ex.: a aba reconectou), reentra automaticamente.
+  if (window.currentRoomCode) {
+    console.log("🔄 Reentrando na sala privada:", window.currentRoomCode);
+    socket.emit("join-room", window.currentRoomCode);
+  }
+});
+
 
   socket.on("disconnect", () => {
     console.log("🔌 Desconectado do servidor");
@@ -23,17 +35,78 @@
     }
   });
 
-// === Sincroniza jogadores em tempo real ===
+// === Live Sync ** RECEBE MOVIMENTO DE JOGADORES DA SALA PRIVADA ===
 socket.on("player-move", (data) => {
-  const el = document.getElementById(data.id);
-  if (el) {
-    el.style.transition = "left 0.3s linear, top 0.3s linear";
-    el.style.left = data.left + "px";
-    el.style.top = data.top + "px";
+
+  console.log("🔔 RECEBIDO player-move:", data);
+
+  // ignorar eventos da sala pública
+  if (!window.currentRoomCode || data.room !== window.currentRoomCode) {
+    console.log("⛔ ignorado (sala diferente)");
+    return;
   }
+
+  const el = document.getElementById(data.id);
+  if (!el) {
+    console.warn("❓ elemento não encontrado:", data.id);
+    return;
+  }
+
+  el.style.left = data.left + "px";
+  el.style.top  = data.top  + "px";
 });
 
+socket.on("path_draw", (data) => {
+
+  // ignore eventos de outras salas
+  if (data.room !== window.currentRoomCode) return;
+
+  if (!data.path || !Array.isArray(data.path)) return;
+
+  ctx.beginPath();
+  for (let i = 0; i < data.path.length; i++) {
+    const [x, y] = data.path[i];
+    (i === 0 ? ctx.moveTo : ctx.lineTo)(x, y);
+  }
+  ctx.strokeStyle = "#ff3333";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.closePath();
+
+  // limpa depois de X ms
+  setTimeout(() => {
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }, 4000);
+});
+
+// ==== RECEBE path_draw da sala ====
+socket.on("path_draw", (data) => {
+
+  if (!window.currentRoomCode || data.room !== window.currentRoomCode) {
+    console.log("⛔ path ignorado (outra sala)");
+    return;
+  }
+
+  const canvas = document.getElementById("trace-canvas");
+  const ctx = canvas.getContext("2d");
+
+  ctx.beginPath();
+  for (let i = 0; i < data.path.length; i++) {
+      const [x, y] = data.path[i];
+      (i === 0 ? ctx.moveTo : ctx.lineTo)(x, y);
+  }
+  ctx.strokeStyle = "#ff3333";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.closePath();
+});
+
+
 socket.on("ball-move", (data) => {
+  if (data.room !== window.currentRoomCode) return;
   const el = document.getElementById(data.id);
   if (el) {
     el.style.transition = "left 0.2s linear, top 0.2s linear";
@@ -49,3 +122,24 @@ socket.on("ball-move", (data) => {
     gk.style.top = `${targetY}px`;
   }
 });
+
+// ✅ Quando entrar na sala, atualiza o indicador
+socket.on("joined-room", (roomCode) => {
+  console.log("✅ Joined-room:", roomCode);
+  window.currentRoomCode = roomCode; // garante PIN global sincronizado
+
+  const box = document.getElementById("room-user-indicator");
+  if (box) {
+    box.style.display = "flex";
+    box.innerHTML = `🔐 CT ${roomCode}<br>👥 1 jogador`;
+  }
+});
+
+// ✅ Quando o servidor mandar o total de pessoas conectadas
+socket.on("room-user-count", (total) => {
+  const box = document.getElementById("room-user-indicator");
+  box.style.display = "block";
+  box.innerHTML = `🔐 CT ${window.currentRoomCode}<br>👥 ${total} jogador(es)`;
+});
+
+

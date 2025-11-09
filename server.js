@@ -974,16 +974,75 @@ return res.json({
 
 // === Socket.IO realtime ===
 io.on("connection", (socket) => {
-  console.log(`🔌 Cliente conectado: ${socket.id}`);
 
-  socket.on("player-move", (data) => socket.broadcast.emit("player-move", data));
-  socket.on("ball-move", (data) => socket.broadcast.emit("ball-move", data));
-  socket.on("path_draw", (data) => socket.broadcast.emit("path_draw", data));
+  console.log("🟢 Novo cliente conectado:", socket.id);
 
-  socket.on("disconnect", () => console.log(`❌ Cliente saiu: ${socket.id}`));
+  socket.on("join-room", async (room) => {
+    console.log("📥 SERVER RECEBEU join-room:", room);
+
+    // sai de todas as salas antes de entrar na nova
+    [...socket.rooms]
+      .filter(r => r !== socket.id)
+      .forEach(r => socket.leave(r));
+
+    socket.join(room);
+    socket.emit("joined-room", room);
+
+    const clients = await io.in(room).fetchSockets();
+    io.to(room).emit("room-user-count", clients.length);
+
+    console.log("📤 ENVIANDO room-user-count:", clients.length);
+  });
+
+  socket.on("disconnect", async () => {
+    console.log("🔴 Cliente saiu:", socket.id);
+
+    for (const room of socket.rooms) {
+      const clients = await io.in(room).fetchSockets();
+      io.to(room).emit("room-user-count", clients.length);
+    }
+  });
+
+  // ✅ movimento de players
+socket.on("player-move", (data) => {
+  console.log("📤 SERVER recebeu player-move:", data);
+
+  if (!data.room) {
+    console.log("⛔ ignorado (sem room)");
+    return;
+  }
+
+  socket.to(data.room).emit("player-move", data);
 });
 
-// === Endpoint de chat do Massimiliano Allegri (usando OpenRouter) ===
+
+  // ✅ movimento da bola
+  socket.on("ball-move", (data) => {
+    if (!data.room) return;
+    socket.to(data.room).emit("ball-move", data);
+  });
+
+  // ✅ desenho tático
+  socket.on("path_draw", (data) => {
+    if (!data.room) return;
+    socket.to(data.room).emit("path_draw", data);
+  });
+
+
+socket.on("disconnect", async () => {
+  console.log("🔴 DISCONNECT:", socket.id);
+
+  // quando desconectar, atualiza o contador da(s) sala(s)
+  for (const r of socket.rooms) {
+    if (r !== socket.id) {
+      const clients = await io.in(r).fetchSockets();
+      io.to(r).emit("room-user-count", clients.length);
+    }
+  }
+});
+});// ✅ Socket real-time para aprimoramento esportivo
+
+// === Endpoint de chat do Careca (usando OpenRouter) ===
 app.post("/api/chat", async (req, res) => {
   try {
     const { message } = req.body;
@@ -1011,7 +1070,7 @@ app.post("/api/chat", async (req, res) => {
     });
 
     const data = await response.json();
-    const reply = data?.choices?.[0]?.message?.content || "O Allegri ficou em silêncio...";
+    const reply = data?.choices?.[0]?.message?.content || "O Careca ficou em silêncio...";
 
     // --- Detecta pedido de mudança de formação no texto do usuário ---
     function extractFormation(text) {

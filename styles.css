@@ -228,6 +228,39 @@
             font-size: 14px;
             user-select: none;
         }
+        
+		#room-user-indicator {
+		position: fixed;
+		top: 55px;              /* logo abaixo do HUD das estrelas */
+		right: 20px;            /* canto superior direito */
+		background: rgba(0, 0, 0, 0.65);
+		padding: 8px 14px;
+		border-radius: 10px;
+		border: 1px solid #ffffff33;
+		font-size: 14px;
+		font-weight: 600;
+		color: #fff;
+		text-align: right;
+		line-height: 16px;
+		display: none;          /* só aparece quando conectar */
+		z-index: 200000;        /* acima de tudo */
+		backdrop-filter: blur(6px);
+		min-width: 80px;
+		}
+		
+.menu-icon {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.menu-icon span {
+  display: block;
+  width: 20px;
+  height: 3px;
+  margin: 2px 0;
+  background: blue; /* color of the lines */
+  border-radius: 4px;
+}
 
 
         .circle {

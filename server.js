@@ -748,7 +748,7 @@ function abelSpeech(opponentFormation, detectedFormation, phase, bloco, compacta
 }
 
 // === Endpoint IA ===
-app.post("/ai/analyze", async (req, res) => {
+app.post("https://guaranifc.onrender.com/ai/analyze", async (req, res) => {
   try {
     const { green = [], black = [], ball = {}, possession = "preto" } = req.body;
     const opponentFormation = (req.body.opponentFormationVision && req.body.opponentFormationVision !== "null")

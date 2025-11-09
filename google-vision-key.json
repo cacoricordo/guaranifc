@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "invictosguarani",
+  "private_key_id": "94e3d731ef63debb7c54ffff47ffb4065434e5d0",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC3hsQhE82pNxyq\nUs5tzogPBI4Qx8TnVoa69YoFTjws2UNIGPMM6VRzdf5+braNr0iYLyR4vNObhRsu\nrPGWiiUZTSJx9aVtJPdbodoCK94sMIoC6WJ/rEZy4T1v0nIuTA63X+wOQC/gyvjU\nnmisDgZlg1nwe6np7L9vsxVCq1XB7Fs0qV3+D/sERrDWxcl9xMORwpqVWxnkjj2+\nv/h1OnkoTeo2ljvI8FwpW2WAIJ9B1AMxe1AZ1p5VlsZuhqiLDq8DBtfkAdpjYEpq\nqZ6ENzzUtbYqbSFsSwDOebbNRAwg2gzy9X1FqnfLribimg9kRDFy7H4Ue/PCd8z5\n2tpiEc8pAgMBAAECggEAAOhkPkukR/LTVqOr4g7UTSAMedhwc2UnVnO8zTOVXZ1s\n1UWg/M6HUejiq4ptpxFtDlT8B7LbaG4F8+Wmw5lcVJ3f4+i/UDpkv38d88Z2xgjZ\nbelB86K3rdLKZIFfJOElw3zFz048TmQtSz6bWEUw0pNjQFVu7OQfEEo2T+BGv3uj\nJOl+gBA0sWCCzOrv9KK/SNERdsu67B7hYxpY7elITRf9X7sxmFBt1LX6vtS7kwly\n5le9fmnNEgF2kG6xlyo4b9sP+n1ziJS19NWLKxlh9L8rZLjIi3O4vJfjBgZzub9X\n0aoCj8C7YZ8lc0AF4UgWg8yAygb4v511AmibiRmbhwKBgQD5JRZ6i2lKcDR8TOde\nvn4Z8AUfxqaeLfiudZqrReU9yB4WrdX2wRGHhUj6dzbsEEjhhBBBw7McsW2yxTsj\nxkvs3Kww2xnvS+tlKXI/MYnbSudIsthBDSk1md0NAf1kdnpIKdrC466xoHW5eMyp\neXN/65ME3txP8dPv9rpWjPycYwKBgQC8k3qbq3rKLcX9Lt0RtvSYVtVYKtEiuYEF\nXJJjfNI8AAGnRGMWscW1Viva7fK5j8PHJ/ofuH0m+fMwb9Y6QIA1yIKIU3VCVHd/\nm+bzae8D/Hq9DRfkAK6b9/gtnVwsk0lXRcBj9uBsQbSeltZgiycyV461uwLtMLEP\nAIirjJQ+AwKBgQCPDNFsSTGKUQSBvjI2fw+uWtbGWOv/9ItNuC63Wml2YLmN8f/h\nLxeehVPSo7KANhVyjr461F+6ANHojEAZmVisxkODxbmNYTzmF7cGO65YoBhN8Iok\nR6c6pH58YoEYNsKdPpLhxZLfYC9X79krEZXUg/ElIcTDjilPJY319ftw2wKBgFIC\n+bG19CL1oUOpG+/WV63hJcvAY0/syVXhmrC12mDJx+5M6aM3ETr6DPybu5JEGesF\nUdx1ycgnsEICgXK4FopNd6d+VGLShV30GY8HJTHgniiWByvbuBSQ1VhRNYMVUzIn\nXbKb7aJnOPw3sWgvXI6iUahreqxZHsfdfZLOArKtAoGAS1bndIyTgHbX4AhaPsK0\nfeLX6NaN89zocegZBf0Q7DNP7aDKBd7SrZnsTb9B7k/bm2trJLPJKI2KRClv/qbS\nbNnvootzAN4LfhsQcgBhcMiBXzrvy7AWjtg8yigWYXT+S7a1cSm1lbmy+CSOlhnM\noLO9NARQpHkNiQum/oM4VNM=\n-----END PRIVATE KEY-----\n",
+  "client_email": "dev-824@invictosguarani.iam.gserviceaccount.com",
+  "client_id": "101363432831238140927",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dev-824%40invictosguarani.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

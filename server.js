@@ -8,8 +8,13 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import OpenAI from "openai";
 
 dotenv.config();
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 const app = express();
 const httpServer = createServer(app);
@@ -930,56 +935,42 @@ socket.on("disconnect", async () => {
 });// ✅ Socket real-time para aprimoramento esportivo
 
 // === Endpoint de chat do Careca (usando OpenAI) ===
-import OpenAI from "openai"; // ⬅️ adicione no topo do arquivo server.js
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // coloque no .env no Render
-});
-
 app.post("/api/chat", async (req, res) => {
   try {
     const { message } = req.body;
 
-    if (!client.apiKey) {
+    if (!openai.apiKey) {
       return res.status(500).json({ error: "OPENAI_API_KEY ausente no servidor" });
     }
 
-    const completion = await client.chat.completions.create({
-      model: "gpt-5",        // 🚀 modelo mais novo
-      max_tokens: 180,
-      temperature: 0.8,
+    const completion = await openai.chat.completions.create({
+      model: "gpt-5",
       messages: [
         {
           role: "system",
           content: `
-Você é **CARECA**, ex-centroavante camisa 9 do Guarani.
-Fala com mentalidade de artilheiro, direto, simples e confiante.
-Fala como boleiro inteligente: posicionamento, atacar espaço, antecipação.
-Quando orientar, diga o motivo tático. 
-Mantenha sempre: CALMA, EFICIÊNCIA, DECISÃO CERTA.
-          `
+Você é CARECA, ex-centroavante camisa 9 do Guarani.
+Fala como artilheiro experiente: simples, direto e confiante.
+Sempre explica *porquê* da escolha tática.
+`
         },
-        {
-          role: "user",
-          content: message
-        }
+        { role: "user", content: message }
       ],
+      temperature: 0.8,
+      max_tokens: 220
     });
 
-    const reply = completion.choices[0].message.content;
+    const reply = completion.choices?.[0]?.message?.content ?? "O Careca ficou em silêncio...";
 
-    // Detecta formação no texto do usuário
     function extractFormation(text) {
       const regex = /\b(4-4-2|4-3-3|4-2-3-1|3-5-2|5-4-1|4-5-1|4-2-4|3-4-3|5-3-2)\b/gi;
-      const match = text.match(regex);
-      return match ? match[0] : null;
+      return text.match(regex)?.[0] ?? null;
     }
 
     res.json({
       reply,
-      formationRequested: extractFormation(message) || null
+      formationRequested: extractFormation(message)
     });
-
   } catch (err) {
     console.error("Erro no /api/chat:", err);
     res.status(500).json({
@@ -988,6 +979,8 @@ Mantenha sempre: CALMA, EFICIÊNCIA, DECISÃO CERTA.
     });
   }
 });
+
+
 
 // ===============================================
 // ✅ SISTEMA DE RANKING (em memória por enquanto)

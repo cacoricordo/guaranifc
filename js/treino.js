@@ -1,4 +1,11 @@
 // js/treino.js — Jogo de Treino Tático (missões + pontuação + ranking)
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// Conexão INVICTO/Supabase
+const supabase = createClient(
+  "https://pwaipoabevlfflqnqiqq.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3YWlwb2FiZXZsZmZscW5xaXFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2OTY3MTksImV4cCI6MjA3ODI3MjcxOX0.14SjVGvcsd4Uta-78t_nPkSSdnhOfuynct7Lh3Jqg64"
+);
 
 (() => {
   const MISSIONS = [
@@ -196,69 +203,61 @@ function scoreWithHelp(attempt){
 	}
 
 
-  // ======== RANKING ========
+// ======== RANKING (SUPABASE) ========
 
-  function renderRanking(list){
-    if (!Array.isArray(list) || !list.length) {
-      $rkList.innerHTML = `<div style="opacity:.8;">Sem dados ainda.</div>`;
-      return;
-    }
-    const rows = list.map((r,i) => `
-      <div style="display:grid;grid-template-columns:26px 1fr auto auto;gap:8px;padding:6px 0;border-bottom:1px solid #2a2a2a;">
-        <div style="opacity:.8;">${i+1}º</div>
-        <div>
-          <div style="font-weight:600;">${r.name}</div>
-          <div style="font-size:12px;opacity:.7;">${r.email}</div>
-        </div>
-        <div>⭐ ${r.points}</div>
-        <div>✨ ${r.goals}</div>
-      </div>`).join("");
-    $rkList.innerHTML = rows;
+
+// Renderiza lista no modal
+function renderRanking(list){
+  if (!Array.isArray(list) || !list.length) {
+    $rkList.innerHTML = `<div style="opacity:.8;">Sem dados ainda.</div>`;
+    return;
   }
 
-async function fetchRanking(range = "daily") {
-  const order = range === "daily" ? "updated_at" : "points";
+  const rows = list.map((r,i) => `
+    <div style="display:grid;grid-template-columns:26px 1fr auto auto;gap:8px;padding:6px 0;border-bottom:1px solid #2a2a2a;">
+      <div style="opacity:.8;">${i+1}º</div>
+      <div>
+        <div style="font-weight:600;">${r.name}</div>
+        <div style="font-size:12px;opacity:.7;">${r.email}</div>
+      </div>
+      <div>⭐ ${r.points}</div>
+      <div>✨ ${r.goals}</div>
+    </div>
+  `).join("");
 
+  $rkList.innerHTML = rows;
+}
+
+// Carrega ranking do Supabase
+async function fetchRanking(){
   const { data, error } = await supabase
     .from("ranking")
     .select("*")
-    .order(order, { ascending: false })
+    .order("points", { ascending: false })
     .limit(30);
 
-  if (error) {
+  if (error){
     console.error(error);
-    renderRanking([]);
-  } else {
-    renderRanking(data);
+    return;
   }
+
+  renderRanking(data);
 }
 
-  rkTabs.forEach(btn => btn.addEventListener("click", () => {
-    rkTabs.forEach(b => b.style.background = "#222");
-    btn.style.background = "#333";
-    fetchRanking(btn.dataset.range);
-  }));
+// Clique abre modal do ranking
+$starPoints?.addEventListener("click", () => {
+  $rankingModal.style.display = "flex";
+  fetchRanking();
+});
 
-  $starPoints?.addEventListener("click", () => {
-    $rankingModal.style.display = "flex";
-    // carrega ranking diário por padrão
-    rkTabs.forEach(b => b.style.background = b.dataset.range === "daily" ? "#333" : "#222");
-    fetchRanking("daily");
-  });
+// Fechar modal
+$rankingClose?.addEventListener("click", () => {
+  $rankingModal.style.display = "none";
+});
 
-  $rankingClose?.addEventListener("click", () => {
-    $rankingModal.style.display = "none";
-  });
-
-  $rkSave?.addEventListener("click", async () => {
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const supabase = createClient(
-  "https://pwaipoabevlfflqnqiqq.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3YWlwb2FiZXZsZmZscW5xaXFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2OTY3MTksImV4cCI6MjA3ODI3MjcxOX0.14SjVGvcsd4Uta-78t_nPkSSdnhOfuynct7Lh3Jqg64"
-);
-
+// Salvar score + auth
 $rkSave?.addEventListener("click", async () => {
+
   const name  = ($rkName.value  || "").trim();
   const email = ($rkEmail.value || "").trim();
   const pass  = ($rkPass.value  || "").trim();
@@ -268,7 +267,7 @@ $rkSave?.addEventListener("click", async () => {
     return;
   }
 
-  // 1 — login / cadastro de usuário
+  // 1 — login / signup (automático)
   const { data: authUser, error: authError } = await supabase.auth.signInWithPassword({
     email,
     password: pass,
@@ -282,21 +281,15 @@ $rkSave?.addEventListener("click", async () => {
     return;
   }
 
-  // 2 — upsert pontuação para esse usuário
-  const { error } = await supabase.from("ranking").upsert({
-    name,
-    email,
-    points: state.points,
-    goals:  state.goals,
-  });
-
-  if (error) {
+  // 2 — grava score no banco
+  if (error){
     notifyTop("Erro ao salvar no ranking.");
     console.error(error);
   } else {
     notifyTop("Pontuação salva no ranking! ✅");
-    fetchRanking(currentRange);
+    fetchRanking();
   }
 });
+
 })();
 

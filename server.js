@@ -8,13 +8,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import OpenAI from "openai";
+import Groq from "groq-sdk";
 
 dotenv.config();
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
 
 const app = express();
 const httpServer = createServer(app);
@@ -24,6 +20,7 @@ const io = new Server(httpServer, {
       "https://www.osinvictos.com.br",
       "https://osinvictos.com.br",
       "https://guaranifc.onrender.com",
+      "localhost:10000",
       "*"
     ],
     methods: ["GET", "POST"]
@@ -935,33 +932,47 @@ socket.on("disconnect", async () => {
 });// ✅ Socket real-time para aprimoramento esportivo
 
 // === Endpoint de chat do Careca (usando OpenAI) ===
+
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY
+});
+
 app.post("/api/chat", async (req, res) => {
   try {
     const { message } = req.body;
 
-    if (!openai.apiKey) {
-      return res.status(500).json({ error: "OPENAI_API_KEY ausente no servidor" });
+    if (!groq.apiKey) {
+      return res.status(500).json({ error: "GROQ_API_KEY ausente no servidor" });
     }
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-5",
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.1-70b-versatile", // 🔥 rápido e gratuito
+      temperature: 0.8,
+      max_tokens: 200,
       messages: [
         {
           role: "system",
           content: `
-Você é CARECA, ex-centroavante camisa 9 do Guarani.
-Fala como artilheiro experiente: simples, direto e confiante.
-Sempre explica *porquê* da escolha tática.
+Você é CARECA, ex-centroavante do Guarani, camisa 9.
+Mentalidade de artilheiro: simples, direto e eficaz.
+Pensa como finalizador: atacar espaço, antecipar, decidir rápido.
+Explica o porquê das escolhas táticas.
+Use linguagem de boleiro, mas com inteligência.
 `
         },
-        { role: "user", content: message }
-      ],
-      temperature: 0.8,
-      max_tokens: 220
+        {
+          role: "user",
+          content: message
+        }
+      ]
     });
 
-    const reply = completion.choices?.[0]?.message?.content ?? "O Careca ficou em silêncio...";
+    const reply =
+      completion.choices?.[0]?.message?.content ||
+      "O Careca ficou em silêncio...";
 
+    // Detecta formação no texto do usuário
     function extractFormation(text) {
       const regex = /\b(4-4-2|4-3-3|4-2-3-1|3-5-2|5-4-1|4-5-1|4-2-4|3-4-3|5-3-2)\b/gi;
       return text.match(regex)?.[0] ?? null;
@@ -969,16 +980,18 @@ Sempre explica *porquê* da escolha tática.
 
     res.json({
       reply,
-      formationRequested: extractFormation(message)
+      formationRequested: extractFormation(message) || null
     });
+
   } catch (err) {
     console.error("Erro no /api/chat:", err);
     res.status(500).json({
-      error: "Falha na comunicação com OpenAI",
+      error: "Falha na comunicação com o Groq",
       details: err.message
     });
   }
 });
+
 
 
 

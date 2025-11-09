@@ -839,13 +839,16 @@ app.post("/ai/vision-tactic", async (req, res) => {
 
     // ✅ aplica seu algoritmo tático existente
     const { def, mid, att } = classifyByThird(players);
-    const formationOpponent = detectFormationByThirds(def, mid, att);
-    
-    // Se a geometria não reconheceu, tenta fallback avançado
+    // ✅ usa let, pois pode mudar no fallback
+
+	let formationOpponent = detectFormationByThirds(def, mid, att);
+
+	// ✅ FALLBACK quando retorna UNKNOWN ou vazio
 	if (!formationOpponent || formationOpponent === "UNKNOWN") {
 	console.log("⚠️ Formação indeterminada → usando fallback avançado");
 	formationOpponent = detectOpponentFormationAdvanced(players) ?? "4-4-2";
 	}
+
 
 	return res.json({
 	opponentFormation: formationOpponent,
@@ -885,15 +888,6 @@ io.on("connection", (socket) => {
     io.to(room).emit("room-user-count", clients.length);
 
     console.log("📤 ENVIANDO room-user-count:", clients.length);
-  });
-
-  socket.on("disconnect", async () => {
-    console.log("🔴 Cliente saiu:", socket.id);
-
-    for (const room of socket.rooms) {
-      const clients = await io.in(room).fetchSockets();
-      io.to(room).emit("room-user-count", clients.length);
-    }
   });
 
   // ✅ movimento de players

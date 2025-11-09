@@ -813,20 +813,43 @@ app.post("/ai/vision-tactic", async (req, res) => {
     if (!apiKey) return res.status(500).json({ error: "OPENROUTER_KEY ausente" });
 
     console.log("📸 Imagem recebida, enviando para análise Vision...");
-
-    // =====================================
-    // ✅ AQUI: DEPOIS do JSON.parse
-    // =====================================
     
-    let formationGuarani = null;
+// =============================
+// 1) PROCESSA RETORNO DO OPENROUTER
+// =============================
+const data = await response.json();
+console.log("📦 Resposta Vision:", JSON.stringify(data, null, 2));
 
-    // Se a visão retornou formação, captura
-    if (parsed) {
-      formationGuarani =
-        parsed?.formationGuarani ??
-        parsed?.formation_guarani ??
-        null;
-    }
+let parsed = null;
+try {
+  const raw = data?.choices?.[0]?.message?.content;
+
+  if (!raw) {
+    return res.json({
+      error: "Falha na análise visual: sem conteúdo",
+      opponentFormation: null
+    });
+  }
+
+	parsed = JSON.parse(raw);
+
+	} catch (err) {
+	console.log("❌ Vision retornou algo inválido / não JSON:", data);
+	return res.json({
+		error: "Falha na análise visual: JSON inválido",
+		opponentFormation: null
+	});
+	}
+
+	console.log("🧠 Visão interpretou:", parsed);
+
+	// =============================
+	// 2) AQUI SIM, parsed existe ✅
+	// =============================
+	let formationGuarani =
+	parsed?.formationGuarani ??
+	parsed?.formation_guarani ??
+	null;
 
     // 2) calcula DEF/MID/ATT por terços (fallback geométrico)
     const { def, mid, att } = classifyByThird(green);
@@ -890,33 +913,6 @@ FORMATO EXATO:
         ]
       })
     });
-
-    const data = await response.json();
-    console.log("📦 Resposta Vision:", JSON.stringify(data, null, 2));
-
-let parsed = null;
-
-try {
-  const raw = data?.choices?.[0]?.message?.content;
-
-  if (!raw) {
-    console.log("❌ Vision não retornou conteúdo.");
-    return res.json({
-      error: "Falha na análise visual: sem conteúdo",
-      opponentFormation: null
-    });
-  }
-
-  parsed = JSON.parse(raw);
-
-} catch (err) {
-  console.log("❌ Vision retornou algo inválido / não JSON:", data);
-  return res.json({
-    error: "Falha na análise visual: JSON inválido",
-    opponentFormation: null
-  });
-}
-
 
 console.log("🧠 Visão interpretou:", parsed);
 

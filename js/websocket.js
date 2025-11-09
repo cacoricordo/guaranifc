@@ -1,4 +1,9 @@
-const socket = window.socket || io();
+const socket = io("https://guaranifc.onrender.com", {
+  transports: ["websocket"],   // força WS, evita polling
+  secure: true,
+  reconnection: true
+});
+
 window.socket = socket;
 
 

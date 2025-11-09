@@ -842,7 +842,7 @@ app.post("/ai/vision-tactic", async (req, res) => {
     const formationOpponent = detectFormationByThirds(def, mid, att);
 
     return res.json({
-      opponentFormation,
+      opponentFormation: formationOpponent,
       playersDetected: players.length,
       ballDetected,
       coachComment:

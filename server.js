@@ -802,109 +802,58 @@ app.post("/ai/analyze", async (req, res) => {
 // === IA VISUAL + AÇÃO TÁTICA REAL ===
 app.post("/ai/vision-tactic", async (req, res) => {
   try {
-    const { fieldImage, possession, ball, green, black } = req.body;
+    const { fieldImage, ball, green, black } = req.body;
 
-    const allowedFormations = [
-      "4-4-2", "4-3-3", "4-2-3-1", "4-2-4",
-      "3-5-2", "5-4-1", "4-5-1", "3-4-3", "5-3-2", "4-1-4-1"
-    ];
+    console.log("📸 Enviando imagem para Google Vision...");
 
-    const apiKey = process.env.OPENROUTER_KEY;
-    if (!apiKey) return res.status(500).json({ error: "OPENROUTER_KEY ausente" });
+    let players = [];
+    let ballDetected = false;
 
-    console.log("📸 Enviando imagem para análise Vision...");
-
-    // 1️⃣ ENVIA PARA A IA VISUAL
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "qwen/qwen2.5-vl-32b-instruct",
-        messages: [
-          {
-            role: "system",
-            content: `
-Analista tático. Analise apenas o time BRANCO (adversário).
-Retorne EXCLUSIVAMENTE JSON, sem texto extra.
-
-Formato:
-{
-  "formationOpponent": "4-4-2",
-  "formationGuarani": "4-3-3",
-  "phase": "ataque" | "defesa" | "transicao",
-  "comment": "texto"
-}
-`
-          },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: `Posse: ${possession}` },
-              { type: "text", text: `Coordenadas (600x300) adversário:${JSON.stringify(black)}, guarani:${JSON.stringify(green)}, bola:${JSON.stringify(ball)}` },
-              { type: "input_image", image_data: fieldImage }
-            ]
-          }
-        ]
-      })
-    });
-
-    // 2️⃣ SÓ AQUI PODE FAZER .json()
-    const data = await response.json();
-    console.log("📦 Vision retornou:", JSON.stringify(data, null, 2));
-
-    // 3️⃣ Parseia o JSON que a IA devolveu
-    let parsed = null;
     try {
-      parsed = JSON.parse(data?.choices?.[0]?.message?.content ?? "{}");
-    } catch (err) {
-      console.log("❌ Vision retornou texto inválido, ignorado.");
+      const [result] = await client.objectLocalization({
+        image: { content: fieldImage } // base64
+      });
+
+      const objects = result.localizedObjectAnnotations ?? [];
+
+      console.log("🧠 Google detectou:", objects.map(o => o.name));
+
+      players = objects
+        .filter(o => o.name === "Person")
+        .map(o => ({
+          x: Math.round(o.boundingPoly.normalizedVertices[0].x * 600),
+          y: Math.round(o.boundingPoly.normalizedVertices[0].y * 300)
+        }));
+
+      ballDetected = objects.some(o => o.name === "Sports ball");
+
+    } catch (visionErr) {
+      console.warn("⚠️ Erro no Google Vision, ativando fallback...");
     }
 
-    console.log("🧠 JSON interpretado:", parsed);
-
-    let formationGuarani =
-      parsed?.formationGuarani ??
-      parsed?.formation_guarani ??
-      null;
-
-    const { def, mid, att } = classifyByThird(green);
-    const formationThirds = detectFormationByThirds(def, mid, att);
-
-    if (!formationGuarani || formationGuarani === "UNKNOWN") {
-      formationGuarani = formationThirds;
+    // ✅ FALLBACK: se Vision detectou poucos jogadores (< 6), usa o desenho (black)
+    if (players.length < 6) {
+      console.log(`⚠️ Vision detectou só ${players.length} jogadores → usando FALLBACK geométrico`);
+      players = black; // usa as coordenadas que vieram do front
     }
 
-    let formationOpponent =
-      parsed?.formationOpponent ??
-      parsed?.formation_opponent ??
-      null;
-
-    if (!allowedFormations.includes(formationOpponent)) {
-      const blackPlayers = Array.isArray(black) ? black : [];
-      formationOpponent = detectOpponentFormationAdvanced(blackPlayers) ?? "4-4-2";
-    }
-
-    const phase = parsed?.phase ?? "defesa";
-    const { greenAI } = buildGreenFromFormation(
-      formationGuarani,
-      ball,
-      phase === "ataque" ? "ataque" : "defesa"
-    );
+    // ✅ aplica seu algoritmo tático existente
+    const { def, mid, att } = classifyByThird(players);
+    const formationOpponent = detectFormationByThirds(def, mid, att);
 
     return res.json({
       opponentFormation,
-      detectedFormation: formationGuarani,
-      phase,
-      green: greenAI,
-      coachComment: parsed?.comment ?? ""
+      playersDetected: players.length,
+      ballDetected,
+      coachComment:
+        players.length < 6
+          ? "Fallback ativado: formação identificada pela geometria do campo."
+          : "Formação detectada via Google Vision."
     });
 
   } catch (err) {
-    console.error("❌ Erro /ai/vision-tactic:", err);
-    return res.status(500).json({ error: "Falha na análise visual", details: err.message });
+    console.error("❌ Erro Vision:", err);
+    res.status(500).json({ error: "Falha no Vision", details: err.message });
   }
 });
 
@@ -984,7 +933,6 @@ socket.on("disconnect", async () => {
 app.post("/api/chat", async (req, res) => {
   try {
     const { message } = req.body;
-    const apiKey = process.env.OPENROUTER_KEY;
 
     if (!apiKey) {
       return res.status(500).json({ error: "OPENROUTER_KEY ausente no servidor" });

@@ -840,16 +840,22 @@ app.post("/ai/vision-tactic", async (req, res) => {
     // ✅ aplica seu algoritmo tático existente
     const { def, mid, att } = classifyByThird(players);
     const formationOpponent = detectFormationByThirds(def, mid, att);
+    
+    // Se a geometria não reconheceu, tenta fallback avançado
+	if (!formationOpponent || formationOpponent === "UNKNOWN") {
+	console.log("⚠️ Formação indeterminada → usando fallback avançado");
+	formationOpponent = detectOpponentFormationAdvanced(players) ?? "4-4-2";
+	}
 
-    return res.json({
-      opponentFormation: formationOpponent,
-      playersDetected: players.length,
-      ballDetected,
-      coachComment:
-        players.length < 6
-          ? "Fallback ativado: formação identificada pela geometria do campo."
-          : "Formação detectada via Google Vision."
-    });
+	return res.json({
+	opponentFormation: formationOpponent,
+	playersDetected: players.length,
+	ballDetected,
+	coachComment:
+    players.length < 6
+      ? "Fallback ativado (geométrico)."
+      : "Formação detectada via Google Vision."
+	});
 
   } catch (err) {
     console.error("❌ Erro Vision:", err);

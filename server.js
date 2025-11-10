@@ -947,7 +947,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const completion = await groq.chat.completions.create({
-      model: "llama-3.1-70b-versatile", // 🔥 rápido e gratuito
+      model: "llama-3.3-70b-versatile", // 🔥 rápido e gratuito
       temperature: 0.8,
       max_tokens: 200,
       messages: [

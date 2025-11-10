@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import Groq from "groq-sdk";
+import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
 
@@ -26,6 +27,11 @@ const io = new Server(httpServer, {
     methods: ["GET", "POST"]
   }
 });
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
 
 // === Configuração de diretórios ===
 const __filename = fileURLToPath(import.meta.url);

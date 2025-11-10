@@ -41,12 +41,6 @@ const supabase = createClient(
   const $rkList  = document.getElementById("rk-list");
   const rkTabs   = Array.from(document.querySelectorAll(".rk-tab"));
 
-  // Captura dos campos do modal do ranking
-  const $rkName  = document.getElementById("rk-name");
-  const $rkEmail = document.getElementById("rk-email");
-  const $rkPass  = document.getElementById("rk-pass");
-  const $rkSave  = document.getElementById("rk-save");
-
   const API_BASE = location.origin.includes("onrender.com") || location.origin.includes("localhost")
     ? location.origin
     : "https://guaranifc.onrender.com";
@@ -306,8 +300,7 @@ $rkSave?.addEventListener("click", async () => {
       name,
       email,
       points: state.points,
-      goals: state.goals,
-      ts: new Date().toISOString(),
+      goals: state.goals
     });
 
   if (insertError) {

@@ -257,7 +257,6 @@ $rankingClose?.addEventListener("click", () => {
 
 // Salvar score + auth
 $rkSave?.addEventListener("click", async () => {
-
   const name  = ($rkName.value  || "").trim();
   const email = ($rkEmail.value || "").trim();
   const pass  = ($rkPass.value  || "").trim();
@@ -267,29 +266,90 @@ $rkSave?.addEventListener("click", async () => {
     return;
   }
 
-  // 1 — login / signup (automático)
-  const { data: authUser, error: authError } = await supabase.auth.signInWithPassword({
+  // 1) tenta fazer login
+  let { data: authUser, error: authError } = await supabase.auth.signInWithPassword({
     email,
     password: pass,
-  }).catch(async () => {
-    return supabase.auth.signUp({ email, password: pass });
   });
 
+  // 2) se não existe, cria
   if (authError) {
-    notifyTop("Erro na autenticação.");
-    console.error(authError);
-    return;
+    let { data: newUser, error: signupError } = await supabase.auth.signUp({
+      email,
+      password: pass,
+    });
+
+    if (signupError) {
+      notifyTop("Erro na autenticação (cadastro).");
+      console.error(signupError);
+      return;
+    }
+
+    authUser = newUser;
   }
 
-  // 2 — grava score no banco
-  if (error){
+  // 3) grava score (upsert)
+  const { error: insertError } = await supabase
+    .from("ranking")
+    .upsert({
+      name,
+      email,
+      points: state.points,
+      goals: state.goals,
+      ts: new Date().toISOString(),
+    });
+
+  if (insertError) {
     notifyTop("Erro ao salvar no ranking.");
-    console.error(error);
+    console.error(insertError);
   } else {
     notifyTop("Pontuação salva no ranking! ✅");
     fetchRanking();
   }
 });
+
+// 1 — tenta login
+let { data: authUser, error: authError } = await supabase.auth.signInWithPassword({
+  email,
+  password: pass,
+});
+
+// 2 — se não existir, cria o usuário
+if (authError) {
+  let { data: newUser, error: signupError } = await supabase.auth.signUp({
+    email,
+    password: pass,
+  });
+
+  if (signupError) {
+    notifyTop("Erro na autenticação (cadastro).");
+    console.error(signupError);
+    return;
+  }
+
+  authUser = newUser;
+}
+
+
+// 2 — grava score no banco (ranking table)
+const { error: insertError } = await supabase
+  .from("ranking")
+  .upsert({
+    name,
+    email,
+    points: state.points,
+    goals: state.goals,
+    ts: new Date().toISOString()
+  });
+
+if (insertError) {
+  notifyTop("Erro ao salvar no ranking.");
+  console.error(insertError);
+  return;
+}
+
+notifyTop("Pontuação salva no ranking! ✅");
+fetchRanking();
 
 })();
 

@@ -1,4 +1,4 @@
-/* === SpeechSynthesis Initialization (Speech Fix Pro) === */
+/* === SpeechSynthesis Initialization (V.I.V.A.S. VECTOR INTERACT viSUAL Audio SPORTS BR M.U. 08685**** UTILITY MODEL PATENTED) === */
 let voicesReady = false;
 let selectedVoice = null;
 

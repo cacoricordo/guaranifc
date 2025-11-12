@@ -2,13 +2,13 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Guarani FC, Campo Tático</title>
+    <title>Guarani FC, CT Virtual</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://www.osinvictos.com.br/dashboard/guaranifc/">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="https://www.osinvictos.com.br/dashboard/guaranifc/img/guranifc-previa.jpg">
-    <meta property="og:title" content="AC Milan, Campo Tático">
+    <meta property="og:title" content="Guarani FC, CT Virtual">
     <meta property="og:description" content="Campeão Invicto da Copa do Brasil 2025 no futebol 7">
     <meta property="og:image" content="https://www.osinvictos.com.br/dashboard/guaranifc/img/guaranifc-previa.jpg">
     <link rel="stylesheet" href="styles.css">
@@ -31,7 +31,7 @@
   background-attachment: fixed;
 ">
 
-  <!-- ===== Campo Tático ===== -->
+  <!-- ===== Campo Tático para aprimoramento esportivo ===== -->
     <div id="background-square" class="background-square"></div>
     <div id="background-line"></div>
     <div id="background-line2"></div>
@@ -68,13 +68,13 @@
   <div id="circle11" class="circle">11</div>
   <div id="circle12" class="circle" style="background: transparent;"></div>
   <div id="circle13" class="circle" style="background:#125424;">2</div>
-  <div id="circle14" class="circle" style="background:#125424;">6</div>
+  <div id="circle14" class="circle" style="background:#125424;">4</div>
   <div id="circle15" class="circle" style="background:#125424;">3</div>
-  <div id="circle16" class="circle" style="background:#125424;">4</div>
+  <div id="circle16" class="circle" style="background:#125424;">5</div>
   <div id="circle17" class="circle" style="background:#125424;">8</div>
-  <div id="circle18" class="circle" style="background:#125424;">5</div>
-  <div id="circle19" class="circle" style="background:#125424;">7</div>
-  <div id="circle20" class="circle" style="background:#125424;">10</div>
+  <div id="circle18" class="circle" style="background:#125424;">6</div>
+  <div id="circle19" class="circle" style="background:#125424;">10</div>
+  <div id="circle20" class="circle" style="background:#125424;">7</div>
   <div id="circle21" class="circle" style="background:#125424;">11</div>
   <div id="circle22" class="circle" style="background:#125424;">9</div>
   <div id="circle23" class="circle">01</div>
@@ -126,13 +126,14 @@
    Treino
 </button>
 
-<button id="btn-home" class
+<a href="https://www.osinvictos.com.br" id="btn-home"
   style="position:fixed;top:323px;left:20px;z-index:10000;
-        font-size:0.7em;padding:8px 16px;border-radius:8px;
-        background:#222;color:#fff;border:none;cursor:pointer;
-        box-shadow:0 2px 6px rgba(0,0,0,0.15);">
-  <a href="https://osinvictos.com.br">⌂</a>
-</button>
+         font-size:0.6em;padding:8px 16px;border-radius:8px;
+         background:#222;color:#ffffff;text-decoration:none;
+         border:none;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15);
+         display:flex;align-items:center;justify-content:center;">
+  ⌂
+</a>
 
 
 <button id="btn-criar-campo"
@@ -157,7 +158,7 @@
       border:1px solid #444;display:flex;flex-direction:column;
       gap:12px;width:260px;text-align:center;color:#fff;">
 
-    <h3>🔐 Sala Privada</h3>
+    <h3>🔐 CT Privado</h3>
     <p>Digite o PIN (4 números):</p>
 
     <input id="rt-room-input" maxlength="4" placeholder="1234"
@@ -210,7 +211,8 @@
       </model-viewer>
   </div>
   
-
+<script src="js/formations.js"></script>
+<script src="js/sheenpath.js"></script>
 <script src="js/core.js"></script> 
 <script src="js/aitatica.js"></script>
 <script src="js/fullscreen.js"></script>
@@ -254,7 +256,7 @@
   z-index: 10005;
 ">
   <b>📊 Inteligência Tática</b><br>
-  <span id="hud-formations">Adversário: ? | Palmeiras: ?</span><br>
+  <span id="hud-formations">Adversário: ? | Guarani: ?</span><br>
   <span id="hud-phase">Fase: ?</span><br>
   <span id="hud-block">Bloco: ? | Compactação: ?</span>
 </div>

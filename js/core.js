@@ -1,5 +1,4 @@
-/* ===== CORE: movimento, socket, física e AI analyze ===== */
-
+/* ===== CORE de aprimoramento esportivo: movimento, socket, física e AI analyze ===== */
 
 // === Utilitário: throttle ===
 function throttle(fn, delay) {
@@ -234,17 +233,93 @@ document.addEventListener("touchend", endDrag);
 const canvas = document.getElementById("trace-canvas");
 const ctx = canvas?.getContext("2d", { willReadFrequently: true });
 
-   function animateTeam(prefix, positions) {
-    for (const p of positions) {
-      if (p.id === 23) continue;
-      const el = document.getElementById(prefix + p.id);
-      if (el) {
-        el.style.transition = 'left 1s ease, top 1s ease';
-        el.style.left = p.left + 'px';
-        el.style.top = p.top + 'px';
-      }
+   
+function animateTeam(prefix, positions, onComplete, phase = "defesa") {
+  const fieldRect = document.getElementById("background-square").getBoundingClientRect();
+
+  // === Caminho ondulado baseado na fase ===
+  const { path: sheenPath, speed } = generateSheenPath(550, 150, phase);
+
+  let frame = 0;
+  const totalFrames = sheenPath.length;
+
+  const interval = setInterval(() => {
+    const point = sheenPath[frame];
+    if (!point) {
+      clearInterval(interval);
+      if (onComplete) onComplete();
+      return;
     }
-  }
+
+    positions.forEach((p, idx) => {
+      const el = document.getElementById(prefix + p.id);
+      if (!el) return;
+
+      const offsetY = Math.sin((frame / 6) + idx / 2) * 5;
+      const offsetX = Math.cos((frame / 10) + idx / 3) * 2;
+
+      el.style.left = fieldRect.left + point.x + offsetX + "px";
+      el.style.top = fieldRect.top + point.y + offsetY + "px";
+    });
+
+    frame++;
+  }, speed);
+}
+
+
+/**
+ * Anima a transição entre duas formações (ex: 4-4-2 → 4-3-3)
+ * usando uma curva Sheen & Ghain (ش غ).
+ */
+function animateFormationTransition(prefix, fromFormation, toFormation, phase = "transicao") {
+  const field = document.getElementById("background-square");
+  const rect = field.getBoundingClientRect();
+
+  // Gera a trajetória Sheen → Ghain → Diagonal
+  const { path: sheenPath, speed } = window.generateSheenPath(300, 50, phase, true);
+
+  const fieldCenterX = rect.width / 2;
+  const totalFrames = sheenPath.length;
+  let frame = 0;
+
+  const interval = setInterval(() => {
+    const point = sheenPath[frame];
+    if (!point) {
+      clearInterval(interval);
+      return;
+    }
+
+    // Interpola cada jogador entre as formações
+    for (let i = 0; i < toFormation.length; i++) {
+      const player = toFormation[i];
+      const el = document.getElementById(prefix + player.id);
+      if (!el) continue;
+
+      const from = fromFormation.find(f => f.id === player.id);
+      if (!from) continue;
+
+      const progress = frame / totalFrames;
+      const lerpX = from.prefferedZone[0] + (player.prefferedZone[0] - from.prefferedZone[0]) * progress;
+      const lerpY = from.prefferedZone[1] + (player.prefferedZone[1] - from.prefferedZone[1]) * progress;
+
+      // Oscilação leve durante movimento
+      const offsetX = Math.cos((frame / 8) + i / 2) * 3;
+      const offsetY = Math.sin((frame / 8) + i / 3) * 3;
+
+      // Recentrar o time (Carlos Alberto Silva Style)
+      const centerOffsetX = fieldCenterX - 300; // 600/2 - referência base
+
+      el.style.left = rect.left + (lerpX + point.x / 10 + offsetX + centerOffsetX) + "px";
+      el.style.top  = rect.top  + (lerpY + point.y / 10 + offsetY) + "px";
+    }
+
+    frame++;
+  }, speed);
+}
+
+window.animateFormationTransition = animateFormationTransition;
+
+
 
 // === 🟢 BLOCO TÁTICO DINÂMICO (MOVE O TIME TODO) ===
 function applyDynamicBlocks(greenPlayers, phase, opponentFormation) {
@@ -263,8 +338,9 @@ function applyDynamicBlocks(greenPlayers, phase, opponentFormation) {
     const el = document.getElementById(`circle${p.id}`);
     if (!el) return;
     const newX = p.left + blockOffsetX;
-    el.style.left = `${Math.max(20, Math.min(580, newX))}px`;
-    el.style.top  = `${p.top}px`;
+	const fieldRect = document.getElementById("background-square").getBoundingClientRect();
+	el.style.left = (fieldRect.left + p.left) + "px";
+	el.style.top  = (fieldRect.top + p.top) + "px";
     p.left = Math.max(20, Math.min(580, newX));
   });
 }

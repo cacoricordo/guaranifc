@@ -1,4 +1,4 @@
-// js/treino.js — Jogo de Treino Tático (missões + pontuação + ranking)
+// js/treino.js — Jogo de Treino Tático (aprimoramento esportivo)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Conexão INVICTO/Supabase
@@ -97,7 +97,7 @@ const supabase = createClient(
     state.solved = false;
     notifyTop(`🎯 Missão: faça a IA montar ${state.mission}. Mova o time de treino Branco e aperte "Análise IA".`);
       clearTimeout(helpTimeout);
-  helpTimeout = setTimeout(() => {
+	  helpTimeout = setTimeout(() => {
     if (typeof showAskForTraineeToHelp === "function") {
       showAskForTraineeToHelp();
     }

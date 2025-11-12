@@ -1,4 +1,4 @@
-/* === Controle de fullscreen + compatibilidade com iPhone === */
+/* === Controle de aprimoramento esportivo === */
 const overlay = document.getElementById("fullscreen-overlay");
 const exitBtn = document.getElementById("exit-fullscreen-btn");
 

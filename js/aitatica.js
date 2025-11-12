@@ -1,4 +1,4 @@
-// ==== Constantes do campo (mantém igual ao backend) ====
+// ==== Constantes do campo (o aprimoramento esportivo) ====
 // window.FIELD_WIDTH = 600;
 // window.FIELD_HEIGHT = 300;
 
@@ -257,19 +257,29 @@ function getCurrentPossession() {
     hudBox.style.opacity = "1";
 
     // === Movimenta o para a nova formação sugerida pela IA Vision ===
-    if (data.green) {
-      animateTeam("circle", data.green, () => {
-    if (data.phase && data.opponentFormation) {
-      applyDynamicBlocks(data.green, (data.phase || "").toLowerCase(), data.opponentFormation);
-        }
-      });
-    }
+if (data.green && data.detectedFormation && data.opponentFormation) {
+  const fromFormation = FORMATIONS[data.lastFormation || "4-4-2"];
+  const toFormation = FORMATIONS[data.detectedFormation || "4-3-3"];
+  const phase = (data.phase || "transicao").toLowerCase();
+
+  if (fromFormation && toFormation) {
+    animateFormationTransition("circle", fromFormation, toFormation, phase);
+  } else {
+    animateTeam("circle", data.green, () => {
+      applyDynamicBlocks(data.green, phase, data.opponentFormation);
+    }, phase);
+  }
+
+  // Atualiza a referência da última formação
+  data.lastFormation = data.detectedFormation;
+}
+
     
     try {
       window.dispatchEvent(new CustomEvent("ia:analyze:done", { detail: data }));
     } catch(e) { console.warn("ia:analyze:done dispatch falhou", e); }
 
-    // === Exibe o comentário do Careca, ===
+    // === Exibe o comentário do Careca ===
     if (data.coachComment) {
       setTimeout(() => showAbelCommentPopup(data.coachComment), 5000);
     }

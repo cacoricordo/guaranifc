@@ -1,4 +1,4 @@
-/* ===== Desenho Tático: correção para offset mobile (HiDPI + CSS size sync) ===== */
+/* ===== Desenho Tático p/ aprimoramento esportivo ===== */
 (function(){
   const canvas = document.getElementById("trace-canvas");
   const penBtn = document.getElementById("pen-path-btn");
@@ -47,7 +47,7 @@
     penMode = !penMode;
     penBtn.style.background = penMode ? "#33aaff" : "#222";
     canvas.style.pointerEvents = penMode ? "auto" : "none";
-    penBtn.textContent = penMode ? "✎ Desenhando..." : "✎ Desenho Tático";
+    penBtn.textContent = penMode ? "✎ Desenh..." : "✎ Desenho";
     if (penMode) {
       canvas.style.zIndex = "1000";
     } else {

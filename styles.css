@@ -1,4 +1,4 @@
-        .background-square {  /* Gramado */
+        .background-square {  /* Gramado para aprimoramento esportivo */
             position: absolute;
             left: 20px;
             top: 20px;
@@ -262,6 +262,9 @@
   border-radius: 4px;
 }
 
+#chat-container {
+  transition: all 0.3s ease;
+}
 
         .circle {
             width: 26px; height: 26px;
@@ -405,7 +408,7 @@
   right: 20px;
   width: 180px;
   height: 180px;
-  z-index: 8000;
+  z-index: 4000;
   filter: drop-shadow(0 0 20px rgba(255,255,255,0.25));
   pointer-events: auto;
 
@@ -521,7 +524,6 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-
   width: 350px;
   padding: 18px;
   background: rgba(0,0,0,0.90);
@@ -531,8 +533,7 @@
   font-family: 'Segoe UI', sans-serif;
   font-size: 16px;
   text-align: center;
-
-  z-index: 99999; /* FICA NA FRENTE DE TUDO */
+  z-index: 99999;
   opacity: 0;
   pointer-events: none;
   transition: opacity .3s ease;
@@ -547,6 +548,7 @@
   display: flex;
   flex-direction: column;
   height: 70vh;
+  z-index: 5000 ;
 }
 
 #chat-body {
@@ -593,6 +595,19 @@
     top: auto !important;
   }
 }
-
-
-
+/* === Centraliza o pop-up do treino no centro do campo === */
+#treino-missao,
+.missao-popup,
+#mission-popup,
+#treino-popup {
+  position: fixed !important;
+  left: calc(20px + 300px);   /* centro horizontal do campo (20 + 600/2) */
+  top: calc(20px + 150px);    /* centro vertical do campo (20 + 300/2) */
+  transform: translate(-50%, -50%);
+  z-index: 200000 !important;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

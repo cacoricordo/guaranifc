@@ -1,5 +1,5 @@
 const socket = io("https://guaranifc.onrender.com", {
-  transports: ["websocket"],   // força WS, evita polling
+  transports: ["websocket"],   //  fix --force; força WS, evita polling
   secure: true,
   reconnection: true
 });

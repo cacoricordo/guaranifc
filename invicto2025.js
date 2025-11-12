@@ -1,4 +1,4 @@
-// === Popup da camisa Invicto ===
+// === Popup da camisa Invicto tecido Dry ===
 function popupInvicto() {
   const popup = document.getElementById("popup-invicto");
   popup.classList.add("show");

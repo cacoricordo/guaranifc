@@ -1,6 +1,6 @@
 let currentRoomCode = null;
 
-// captura do botão de interagir
+// criando aprimoramento esportivo
 const criarCampoBtn = document.getElementById("btn-criar-campo");
 
 // botão de compartilhar WhatsApp (já existente)
@@ -23,6 +23,11 @@ criarCampoBtn.addEventListener("click", (e) => {
 
   modal.style.display = "flex";
 });
+
+// CANCELAR PIN — fecha o modal
+document.getElementById("rt-room-cancel").onclick = () => {
+  modal.style.display = "none";
+};
 
 shareBtn.addEventListener("click", (e) => {
   if (!window.currentRoomCode) {

@@ -823,7 +823,6 @@ app.post("/ai/vision-tactic", async (req, res) => {
       });
 
       const objects = result.localizedObjectAnnotations ?? [];
-
       console.log("🧠 Google detectou:", objects.map(o => o.name));
 
       players = objects
@@ -834,7 +833,6 @@ app.post("/ai/vision-tactic", async (req, res) => {
         }));
 
       ballDetected = objects.some(o => o.name === "Sports ball");
-
     } catch (visionErr) {
       console.warn("⚠️ Erro no Google Vision, ativando fallback...");
     }
@@ -845,29 +843,42 @@ app.post("/ai/vision-tactic", async (req, res) => {
       players = black; // usa as coordenadas que vieram do front
     }
 
-    // ✅ aplica seu algoritmo tático existente
+    // ✅ Aplica seu algoritmo tático existente
     const { def, mid, att } = classifyByThird(players);
-    // ✅ usa let, pois pode mudar no fallback
+    let formationOpponent = detectFormationByThirds(def, mid, att);
 
-	let formationOpponent = detectFormationByThirds(def, mid, att);
+    // ✅ FALLBACK quando retorna UNKNOWN ou vazio
+    if (!formationOpponent || formationOpponent === "UNKNOWN") {
+      console.log("⚠️ Formação indeterminada → usando fallback avançado");
+      formationOpponent = detectOpponentFormationAdvanced(players) ?? "4-4-2";
+    }
 
-	// ✅ FALLBACK quando retorna UNKNOWN ou vazio
-	if (!formationOpponent || formationOpponent === "UNKNOWN") {
-	console.log("⚠️ Formação indeterminada → usando fallback avançado");
-	formationOpponent = detectOpponentFormationAdvanced(players) ?? "4-4-2";
-	}
+    // 🧠 NOVO: adiciona prompt descritivo para a IA tática (explicativo)
+    const visionPrompt = `
+      Você é um analista tático de futebol.
+      Observe as coordenadas dos jogadores adversários e identifique o sistema tático.
+      Baseie-se nestes padrões possíveis:
+      4-4-2, 4-3-3, 4-2-3-1, 3-5-2, 3-4-3, 5-4-1, 5-3-2, 4-2-4, 4-5-1, 4-1-4-1.
+      Jogue os jogadores em terços (defesa, meio, ataque) e estime qual formação eles estão montando.
+      Responda apenas com o nome da formação, sem comentários adicionais.
+    `;
 
+    console.log("📋 Prompt tático de observação configurado:", visionPrompt);
 
-	return res.json({
-	opponentFormation: formationOpponent,
-	playersDetected: players.length,
-	ballDetected,
-	coachComment:
-    players.length < 6
-      ? "Fallback ativado (geométrico)."
-      : "Formação detectada via Google Vision."
-	});
+    // (futuramente, você pode enviar o prompt e players para outro modelo, tipo Gemini ou GPT)
 
+    // 🕒 Atraso para sincronizar feedback no front
+    setTimeout(() => {
+      return res.json({
+        opponentFormation: formationOpponent,
+        playersDetected: players.length,
+        ballDetected,
+        coachComment:
+          players.length < 6
+            ? "Fallback ativado (geométrico)."
+            : "Formação detectada via Google Vision."
+      });
+    }, 5000); // 5s de delay visual
   } catch (err) {
     console.error("❌ Erro Vision:", err);
     res.status(500).json({ error: "Falha no Vision", details: err.message });

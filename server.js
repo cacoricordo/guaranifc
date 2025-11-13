@@ -705,6 +705,40 @@ function detectFormationByThirds(def, mid, att){
   return "UNKNOWN";
 }
 
+// === Função de correspondência com tolerância espacial (hitTest) ===
+function detectFormationByProximity(players, tolerance = 30) {
+  if (!players || players.length === 0) return "UNKNOWN";
+
+  const formations = Object.keys(global.FORMATIONS || window.FORMATIONS || {});
+  let bestMatch = { formation: "UNKNOWN", score: 0 };
+
+  for (const key of formations) {
+    const positions = (global.FORMATIONS || window.FORMATIONS)[key];
+    let hits = 0;
+
+    for (const p of players) {
+      for (const ref of positions) {
+        const dx = p.x - ref.prefferedZone[0];
+        const dy = p.y - ref.prefferedZone[1];
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist <= tolerance) {
+          hits++;
+          break; // conta apenas uma correspondência por jogador
+        }
+      }
+    }
+
+    const score = hits / positions.length;
+    if (score > bestMatch.score) {
+      bestMatch = { formation: key, score };
+    }
+  }
+
+  console.log(`📊 Proximidade: melhor correspondência = ${bestMatch.formation} (${(bestMatch.score * 100).toFixed(1)}%)`);
+  return bestMatch.formation;
+}
+
 
     // --- DETECTA PRESSÃO NA ÁREA DEFENSIVA ---
     function emergencyBlockIfUnderPressure(ball, blackPlayers) {
@@ -843,17 +877,21 @@ app.post("/ai/vision-tactic", async (req, res) => {
       players = black; // usa as coordenadas que vieram do front
     }
 
-    // ✅ Aplica seu algoritmo tático existente
+    // Aplica seu algoritmo tático existente
     const { def, mid, att } = classifyByThird(players);
-    let formationOpponent = detectFormationByThirds(def, mid, att);
+	// Avalia também por proximidade espacial (hitTest)
+	let formationOpponent = detectFormationByProximity(players, 25); // raio ~25px
+	if (!formationOpponent || formationOpponent === "UNKNOWN") {
+	formationOpponent = detectFormationByThirds(def, mid, att);
+	}
 
-    // ✅ FALLBACK quando retorna UNKNOWN ou vazio
+    // FALLBACK quando retorna UNKNOWN ou vazio
     if (!formationOpponent || formationOpponent === "UNKNOWN") {
       console.log("⚠️ Formação indeterminada → usando fallback avançado");
       formationOpponent = detectOpponentFormationAdvanced(players) ?? "4-4-2";
     }
 
-    // 🧠 NOVO: adiciona prompt descritivo para a IA tática (explicativo)
+    // NOVO: adiciona prompt descritivo para a IA tática (explicativo)
     const visionPrompt = `
       Você é um analista tático de futebol.
       Observe as coordenadas dos jogadores adversários e identifique o sistema tático.

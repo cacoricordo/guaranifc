@@ -262,10 +262,6 @@
   border-radius: 4px;
 }
 
-#chat-container {
-  transition: all 0.3s ease;
-}
-
         .circle {
             width: 26px; height: 26px;
             background: #33aaff; border-radius: 50%;
@@ -408,7 +404,7 @@
   right: 20px;
   width: 180px;
   height: 180px;
-  z-index: 4000;
+  z-index: 2000;
   filter: drop-shadow(0 0 20px rgba(255,255,255,0.25));
   pointer-events: auto;
 
@@ -425,7 +421,7 @@
 #popup-invicto {
   position: fixed;
   bottom: 80px;
-  right: 20px;
+  right: 10px;
   width: 250px;
   height: 300px;
   background: rgba(0,0,0,0.85);
@@ -548,7 +544,8 @@
   display: flex;
   flex-direction: column;
   height: 70vh;
-  z-index: 5000 ;
+  z-index: 4000 ;
+  transition: all 0.3s ease;
 }
 
 #chat-body {
@@ -600,11 +597,11 @@
 .missao-popup,
 #mission-popup,
 #treino-popup {
-  position: fixed !important;
-  left: calc(20px + 300px);   /* centro horizontal do campo (20 + 600/2) */
-  top: calc(20px + 150px);    /* centro vertical do campo (20 + 300/2) */
+  position: fixed;
+  left: 50%;
+  top: 50%;  
   transform: translate(-50%, -50%);
-  z-index: 200000 !important;
+  z-index: 200000;
   max-width: 90vw;
   max-height: 90vh;
   display: flex;

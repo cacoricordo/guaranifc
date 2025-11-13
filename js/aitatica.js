@@ -206,7 +206,7 @@ function getCurrentPossession() {
 
   aiBtn.addEventListener('click', async function() {
   aiBtn.disabled = true;
-  aiBtn.textContent = "Analisando... ⚙️";
+  aiBtn.textContent = "Analisando⚙️";
   notify("🤖 Careca, está avaliando o adversário e ajustando o Guarani...", 3000);
 
   const hudBox = document.getElementById("tactical-hud");
@@ -279,16 +279,17 @@ if (data.green && data.detectedFormation && data.opponentFormation) {
       window.dispatchEvent(new CustomEvent("ia:analyze:done", { detail: data }));
     } catch(e) { console.warn("ia:analyze:done dispatch falhou", e); }
 
-    // === Exibe o comentário do Careca ===
-    if (data.coachComment) {
-      setTimeout(() => showAbelCommentPopup(data.coachComment), 5000);
-    }
 
-    // ✅ Só mostra uma mensagem
-    const comment = data.coachComment || data.visionReply;
-    if (comment && typeof showAbelCommentPopup === "function") {
-      showAbelCommentPopup(comment);
-    }
+// === Exibe o comentário do Careca ===
+if (data.coachComment) {
+  // Se o comentário contém "Google Vision", atrasa 8.5s
+  const delay = data.coachComment.includes("Google Vision") ? 8500 : 0;
+
+  setTimeout(() => {
+    showAbelCommentPopup(data.coachComment);
+  }, delay);
+}
+
 
     return data;
 

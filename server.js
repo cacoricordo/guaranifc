@@ -476,15 +476,14 @@ app.post("/ai/vision-tactic", async (req, res) => {
 	}
 
 
+	setTimeout(() => {
 	return res.json({
 	opponentFormation: formationOpponent,
 	playersDetected: players.length,
 	ballDetected,
-	coachComment:
-    players.length < 6
-      ? "Fallback ativado (geométrico)."
-      : "Formação detectada via Google Vision."
+	coachComment: ""
 	});
+	}, 5000); 
 
   } catch (err) {
     console.error("❌ Erro Vision:", err);

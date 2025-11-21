@@ -158,84 +158,80 @@ function detectPhase(possession, opponentFormation) {
 }
 
 
-// === Contra-formação — Filosofia Carlos Alberto Silva ===
-function chooseCounterFormation(opponentFormation, possession) {
-  
-  // Quando Guarani tem a bola → monta postura ofensiva organizada
-  if (possession === "verde") {
+// === Contra-formação — Filosofia Carlos Alberto Silva (mesclada com contra-ataque IA) ===
+function chooseCounterFormation(opponentFormation, possession = "verde", phase = "") {
+
+  // ⚡ 1) DETECÇÃO DE CONTRA-ATAQUE (RECUPERAÇÃO DE BOLA) ========================
+  const vulneraveisContraAtaque = ["4-2-4", "3-4-3", "4-3-3", "4-2-3-1"];
+
+  if (phase === "Defesa" && possession === "verde" && vulneraveisContraAtaque.includes(opponentFormation)) {
+    console.log("⚡ TRANSIÇÃO RÁPIDA ATIVADA (contra-ataque)!");
+    return "4-2-4"; // explosão vertical — muita profundidade
+  }
+
+
+  // 🍃 2) FILOSOFIA CARLOS ALBERTO SILVA — MANTIDA E RESPEITADA ===================
+  if (possession === "verde") {  // COM POSSE
     switch (opponentFormation) {
 
       case "5-4-1":
       case "5-3-2":
-        // Retranca forte: precisamos de meia central conectando e amplitude
-        return "4-2-3-1"; // construção paciente para infiltrar
+        return "4-2-3-1"; // infiltração paciente
 
       case "4-4-2":
-        // Linha horizontal rígida → atacar half-spaces
-        return "4-3-3";   // amplitude + extremos atacando profundidade
+        return "4-3-3";   // atacar half-spaces
 
       case "4-3-3":
-        // Espelho sem perder meio → cortar triangulação deles
-        return "4-2-3-1";
+        return "4-2-3-1"; // cortar triangulação
 
       case "4-2-4":
-        // Eles tiram meio → ganho numérico no meio
-        return "4-1-4-1"; // controle total de meio de campo
+        return "4-1-4-1"; // ganhar meio
 
       case "4-1-4-1":
-        // Um volante só protegendo → atrair e infiltrar por dentro
-        return "4-2-3-1"; // superioridade entrelinhas com camisa 10
+        return "4-2-3-1"; // camisa 10 vem ditar ritmo
 
       case "3-5-2":
-        // 3 zagueiros: abrir campo
         return "4-3-3";  // amplitude máxima
 
       case "3-4-3":
-        // Alas altos, espaço nas costas
-        return "4-2-4";  // dois na última linha para atacar profundidade
+        return "4-2-4";  // atacar costas dos alas
 
       default:
-        return "4-3-3";
+        return "4-3-3";  // postura base
     }
   }
 
-  // Quando o Guarani está sem a bola → prioridade é equilíbrio e disciplina
-  else {
+  // ❌ 3) SEM POSSE DE BOLA (ORGANIZAÇÃO DEFENSIVA) ==============================
+  else {  
     switch (opponentFormation) {
 
       case "4-3-3":
-        // eles têm superioridade no meio → fechar corredor central
-        return "4-5-1"; // marcação por zona com compactação curta
+        return "4-5-1"; // fechar meio
 
       case "4-2-3-1":
-        // neutralizar meia central deles (camisa 10)
-        return "4-4-2"; // 2 encaixes no volante/meia
+        return "4-4-2"; // encaixe no 10
 
       case "4-1-4-1":
-        // volante deles constrói → tiramos linha de passe
-        return "4-3-3"; // encaixe no volante e extremos fecham corredor
+        return "4-3-3"; // cortar linha do volante
 
       case "4-4-2":
-        // Espelho defensivo com disciplina
-        return "4-4-2";
+        return "4-4-2"; // espelhamento seguro
 
       case "3-5-2":
-        // 2 atacantes deles → sempre sobra 1 nosso
-        return "5-4-1"; // fecha com três zagueiros e alas baixos
+        return "5-4-1"; // cobrir atacantes duplos
 
       case "3-4-3":
-        // alas altos, perigoso → proteger amplitude
-        return "5-3-2"; // alas voltam, fecha corredor
+        return "5-3-2"; // alas recuam
 
       case "4-2-4":
-        // eles sacrificam meio campo → transição mata
-        return "4-1-4-1"; // volante controla transição
+        return "4-1-4-1"; // proteger transição
 
       default:
-        return "4-4-2";
+        return "4-4-2"; // disciplina
     }
   }
 }
+
 
 
 // === Monta o Verde (direita → esquerda) ===// === Monta o Verde (direita → esquerda) ===
@@ -328,23 +324,39 @@ function classifyByThird(players){
 }
 
 
-// ---------------------------------------------------------------
-// === DEDUÇÃO DA FORMAÇÃO com base na distribuição numérica
-// ---------------------------------------------------------------
-function detectFormationByThirds(def, mid, att){
-  if (def === 4 && mid === 4 && att === 2) return "4-4-2";
-  if (def === 4 && mid === 3 && att === 3) return "4-3-3";
-  if (def === 4 && mid === 2 && att === 3) return "4-2-3-1";
-  if (def === 3 && mid === 5 && att === 2) return "3-5-2";
-  if (def === 3 && mid === 4 && att === 3) return "3-4-3";
-  if (def === 5 && mid === 4 && att === 1) return "5-4-1";
-  if (def === 5 && mid === 3 && att === 2) return "5-3-2";
-  if (def === 4 && mid === 2 && att === 4) return "4-2-4";
-  if (def === 4 && mid === 5 && att === 1) return "4-5-1";
-  if (def === 4 && mid === 5 && att === 1) return "4-1-4-1";
+// === DETECÇÃO REAL POR POSIÇÃO (SEM D/M/A) ===
+// Divide o campo em terços e conta aglomerações
+function detectFormationAuto(greenPlayers, fieldWidth = 600, fieldHeight = 300) {
+  const DEF_LINE = fieldHeight * 0.35;  // abaixo → defesa
+  const MID_LINE = fieldHeight * 0.65;  // meio
+  // acima disso → ataque
 
-  return "UNKNOWN";
+  let d = 0, m = 0, a = 0;
+
+  for (const p of greenPlayers) {
+    if (p.top < DEF_LINE) d++;
+    else if (p.top < MID_LINE) m++;
+    else a++;
+  }
+
+  const signature = `${d}-${m}-${a}`;
+  console.log("📌 Assinatura visual detectada:", signature);
+
+  const map = {
+    "4-4-2": "4-4-2",
+    "4-3-3": "4-3-3",
+    "3-5-2": "3-5-2",
+    "4-2-3-1": "4-2-3-1",
+    "3-4-3": "3-4-3",
+    "4-2-4": "4-2-4",
+    "4-1-4-1": "4-1-4-1",
+    "5-3-2": "5-3-2",
+    "5-4-1": "5-4-1"
+  };
+
+  return map[signature] || "UNKNOWN"; // fallback
 }
+
 
 // === Função de correspondência com tolerância espacial (hitTest) ===
 function detectFormationByProximity(players, tolerance = 30) {
@@ -430,6 +442,57 @@ function abelSpeech(opponentFormation, detectedFormation, phase, bloco, compacta
   return `${pick(intro)} ${pick(corpo)} ${pick(contexto)}`;
 }
 
+// === DETECTOR TÁTICO COM CLUSTERING (sem depender de D/M/A) ===
+// detecta linhas defensivas, meio-campo e ataque, mesmo tortos
+
+function detectFormationByClustering(players) {
+  if (!players || players.length < 6) return "UNKNOWN";
+
+  // 1) Ordenar por Y (vertical)
+  const sorted = players.slice().sort((a, b) => a.top - b.top);
+
+  // 2) K-means adaptado para 3 terços (sem biblioteca)
+  const groups = [[], [], []]; // defesa, meio, ataque
+
+  // Definir 2 divisores (25% e 55% da altura média)
+  const allY = sorted.map(p => p.top);
+  const minY = Math.min(...allY);
+  const maxY = Math.max(...allY);
+  const range = maxY - minY;
+
+  const defenseLine = minY + range * 0.33;
+  const attackLine  = minY + range * 0.66;
+
+  for (const p of sorted) {
+    if (p.top < defenseLine) groups[0].push(p);      // defesa
+    else if (p.top < attackLine) groups[1].push(p);  // meio
+    else groups[2].push(p);                          // ataque
+  }
+
+  // 3) Gera assinatura tática (ex.: 4-4-2)
+  const d = groups[0].length;
+  const m = groups[1].length;
+  const a = groups[2].length;
+  const signature = `${d}-${m}-${a}`;
+  console.log("📌 Assinatura por clustering:", signature);
+
+  // 4) Mapeamento possível
+  const map = {
+    "4-4-2": "4-4-2",
+    "3-5-2": "3-5-2",
+    "4-3-3": "4-3-3",
+    "4-2-3-1": "4-2-3-1",
+    "4-2-4": "4-2-4",
+    "3-4-3": "3-4-3",
+    "5-4-1": "5-4-1",
+    "5-3-2": "5-3-2",
+    "4-1-4-1": "4-1-4-1",
+  };
+
+  return map[signature] || "UNKNOWN";
+}
+
+
 // === Endpoint IA ===
 app.post("/ai/analyze", async (req, res) => {
   try {
@@ -443,7 +506,7 @@ app.post("/ai/analyze", async (req, res) => {
     const opponentFormation = (req.body.opponentFormationVision && req.body.opponentFormationVision !== "null")
     ? req.body.opponentFormationVision
     : detectOpponentFormationAdvanced(black);
-    let detectedFormation = chooseCounterFormation(opponentFormation, possession);
+    let detectedFormation = chooseCounterFormation(opponentFormation, possession, phase);
 
 	// === REFINO NOVO: TacticalRoles (D/M/A) ajustam formação do Guarani ===
 if (tacticalRoles && Object.keys(tacticalRoles).length > 0) {
@@ -480,12 +543,14 @@ if (tacticalRoles && Object.keys(tacticalRoles).length > 0) {
 }
 
 
-    // ==== NOVO: se o Guarani já tem jogadores no campo, deduz via terços ====
-    if (green && green.length > 0){
-      const { def, mid, att } = classifyByThird(green);
-      const viaThirds = detectFormationByThirds(def, mid, att);
-      if (viaThirds !== "UNKNOWN") detectedFormation = viaThirds;
-    }
+if (green && green.length >= 6) {  // precisa de jogadores suficientes
+  const viaCluster = detectFormationByClustering(green);
+  if (viaCluster !== "UNKNOWN") {
+    detectedFormation = viaCluster;
+    console.log("🔍 Formação por agrupamento espacial:", viaCluster);
+  }
+}
+
 
 
     // ✅ prioridade: comando manual vindo do chat
@@ -654,8 +719,6 @@ app.post("/ai/vision-tactic", async (req, res) => {
     res.status(500).json({ error: "Falha no Vision", details: err.message });
   }
 });
-
-
 
 // === Socket.IO realtime ===
 io.on("connection", (socket) => {

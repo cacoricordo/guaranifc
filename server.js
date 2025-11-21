@@ -1,4 +1,5 @@
-// server.js — AI Tática v12.1.2 (Render + Realtime WebSocket)
+
+// server.js — AI Tática v12.2 (Render + Realtime WebSocket)
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
@@ -10,8 +11,23 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import Groq from "groq-sdk";
 import { createClient } from "@supabase/supabase-js";
+import formations from "./js/formations.mjs";
+import vision from "@google-cloud/vision";
+
+// Garante que FORMATIONS existe no backend
+global.FORMATIONS = global.FORMATIONS || {};
+global.FORMATIONS = formations;
+console.log('⚽ FORMATIONS pronta no backend:', Object.keys(global.FORMATIONS));
 
 dotenv.config();
+
+let visionClient;
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+  const creds = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+  visionClient = new vision.ImageAnnotatorClient({ credentials: creds });
+} else {
+  visionClient = new vision.ImageAnnotatorClient();
+}
 
 const app = express();
 const httpServer = createServer(app);
@@ -40,7 +56,13 @@ const __dirname = path.dirname(__filename);
 // === Middleware ===
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(__dirname));
+app.use(express.static(__dirname, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    }
+  }
+}));
 
 // === Serve o frontend ===
 app.get("/", (req, res) => {
@@ -224,7 +246,7 @@ function chooseCounterFormation(opponentFormation, possession) {
 // - Filosofia Carlos Alberto Silva (organização + superioridade no setor da bola)
 
 function buildGreenFromFormation(formationKey, ball, phase = "defesa") {
-  const formation = FORMATIONS[formationKey] || FORMATIONS["4-3-3"];
+  const formation = global.FORMATIONS[formationKey] || global.FORMATIONS["4-3-3"];
   const greenAI = [];
 
   const BALL_X = ball?.left ?? FIELD_WIDTH / 2;
@@ -328,11 +350,11 @@ function detectFormationByThirds(def, mid, att){
 function detectFormationByProximity(players, tolerance = 30) {
   if (!players || players.length === 0) return "UNKNOWN";
 
-  const formations = Object.keys(global.FORMATIONS || window.FORMATIONS || {});
+  const formations = Object.keys(global.FORMATIONS || {});
   let bestMatch = { formation: "UNKNOWN", score: 0 };
 
   for (const key of formations) {
-    const positions = (global.FORMATIONS || window.FORMATIONS)[key];
+    const positions = (global.FORMATIONS)[key];
     let hits = 0;
 
     for (const p of players) {
@@ -411,6 +433,12 @@ function abelSpeech(opponentFormation, detectedFormation, phase, bloco, compacta
 // === Endpoint IA ===
 app.post("/ai/analyze", async (req, res) => {
   try {
+   if (!global.FORMATIONS || Object.keys(global.FORMATIONS).length === 0) {
+     console.log("♻️ Recuperando FORMATIONS após reinicialização…");
+     const formationsModule = await import('./js/formations.mjs');
+     global.FORMATIONS = formationsModule.default || formationsModule;
+     console.log("⚽ FORMATIONS RECARREGADAS:", Object.keys(global.FORMATIONS));
+   }
     const { green = [], black = [], ball = {}, possession = "preto", tacticalRoles = {} } = req.body;
     const opponentFormation = (req.body.opponentFormationVision && req.body.opponentFormationVision !== "null")
     ? req.body.opponentFormationVision
@@ -498,6 +526,10 @@ if (tacticalRoles && Object.keys(tacticalRoles).length > 0) {
 // === IA VISUAL + AÇÃO TÁTICA REAL ===
 app.post("/ai/vision-tactic", async (req, res) => {
   try {
+	if (!global.FORMATIONS || Object.keys(global.FORMATIONS).length === 0) {
+      console.error("❌ FORMATIONS indisponível (vision-tactic)");
+      return res.status(500).json({ error: "FORMATIONS indisponível no backend" });
+    }
     const { fieldImage, ball, green, black, tacticalRoles = {} } = req.body;
 
     console.log("📸 Enviando imagem para Google Vision...");
@@ -853,7 +885,6 @@ app.get("/ranking", (req, res) => {
   res.json({ top: filtered });
 });
 
-
 // === Inicializa Render ===
 const PORT = process.env.PORT || 10000;
-httpServer.listen(PORT, () => console.log(`✅ AI TÁTICA v12.1.2 + Realtime rodando na porta ${PORT}`));
+httpServer.listen(PORT, () => console.log(`✅ AI TÁTICA v12.2 + Realtime rodando na porta ${PORT}`));

@@ -1,4 +1,4 @@
-window.FORMATIONS = {
+const FORMATIONS = {
   // =========================
   // 4-4-2
   // =========================
@@ -116,8 +116,7 @@ window.FORMATIONS = {
 
   // Ponta esquerda (diagonal para dentro)
   { id: 21, role: "ponta esquerda", prefferedZone:[300, 220] }
-]
-,
+],
 
   // =========================
   // 4-2-3-1
@@ -229,8 +228,7 @@ window.FORMATIONS = {
 
   // Centroavante (referência)
   { id: 22, role: "centroavante", prefferedZone:[260, 170] }
-]
-,
+],
 
   // =========================
   // 5-4-1
@@ -378,3 +376,14 @@ window.FORMATIONS = {
   { id: 22, role: "centroavante", prefferedZone:[260, 170] }
 ]
 };
+
+
+if (typeof window !== "undefined") {
+  window.FORMATIONS = FORMATIONS;
+
+  console.log("⚽ FRONT-END FORMATIONS PRONTAS!");
+
+  setTimeout(() => {
+    dispatchEvent(new Event("formations_ready"));
+  }, 10);
+}

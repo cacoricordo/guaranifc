@@ -262,10 +262,12 @@
   border-radius: 4px;
 }
 
-        .circle {
+        .circle, .circleOpp {
             width: 26px; height: 26px;
             background: #33aaff; border-radius: 50%;
             position: absolute;
+            z-index: 10000 !important;
+            pointer-events: auto !important;
             cursor: grab;
             touch-action: none;
             display: flex;
@@ -279,6 +281,12 @@
             user-select: none;
             text-shadow: 0 0 3px rgba(0,0,0,0.6);
         }
+ 
+.debug-marker,
+.debug-line {
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
 		
 		/* GOLEIRO */
 		#circle1  { left:  25px; top: 160px; background:#FFFFFF; color:green; }

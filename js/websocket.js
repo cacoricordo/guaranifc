@@ -120,5 +120,3 @@ socket.on("room-user-count", (total) => {
   box.style.display = "block";
   box.innerHTML = `🔐 CT ${window.currentRoomCode}<br>👥 ${total} jogador(es)`;
 });
-
-

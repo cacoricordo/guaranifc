@@ -77,8 +77,10 @@ const supabase = createClient(
 
   state.usedHelpThisAttempt = true;
 
-  // força contabilizar tentativa ao pedir ajuda
-  state.attempts = Math.min(4, state.attempts + 1);
+// 🧠 CONTAGEM CORRETA — VAI ATÉ **NO MÁXIMO 4**
+state.attempts = (state.attempts || 0) + 1;
+if (state.attempts > 4) state.attempts = 4;  // proteçao máxima
+console.log(`📢 Tentativa nº ${state.attempts}`);
 
   // pontuação via ajuda
   scoreWithHelp(state.attempts);
@@ -95,6 +97,12 @@ const supabase = createClient(
     state.attempts = 0;
     state.usedHelpThisAttempt = false;
     state.solved = false;
+    state.attempts = 0;
+    // 🧠 Ativa modo treinamento REAL
+    window.isTrainingMode = true;
+    document.body.setAttribute("data-mode", "training");
+    window.lastVisionFormation = null;
+    console.log("🏋️ MODO TREINO ATIVO!");
     notifyTop(`🎯 Missão: faça a IA montar ${state.mission}. Mova o time de treino Branco e aperte "Análise IA".`);
       clearTimeout(helpTimeout);
 	  helpTimeout = setTimeout(() => {
@@ -104,13 +112,51 @@ const supabase = createClient(
   }, 30000);
   }
 
-  function endTraining(success){
-    state.active = false;
-    if (success) {
-      notifyTop(`✅ Missão cumprida! ${state.mission}`);
+function endTraining(success){
+  state.active = false;
+  // 🧮 Cálculo de pontos e saldo de gols
+  const tent = state.attempts || 1;
+  const usedHelp = state.usedHelpThisAttempt || false;
+  let pontos = 0;
+  let saldo = 0;
+
+  if (success) {
+    if (usedHelp) {
+      pontos = 1;
+      saldo = Math.max(3 - (tent - 1), 0);  // ajuda perde valor
     } else {
-      notifyTop(`❌ Missão encerrada. A missão era ${state.mission}.`);
+      pontos = 3;
+      saldo = Math.max(3 - (tent - 1), 0);  // sem ajuda
     }
+    
+    // ----------------------------------------------------
+    // 🏆 PATCH — MOSTRAR OVERLAY DA VITÓRIA AQUI:
+    // ----------------------------------------------------
+    if (typeof showVictoryOverlay === "function") {
+      showVictoryOverlay(`🏆 Missão ${state.mission} concluída! +${pontos} pts | +${saldo} gols`);
+    }
+    // ----------------------------------------------------
+    
+  } else {
+    // ⚽ Se ERROU a 4ª tentativa → IA CHUTA!
+    if (tent >= 4) {
+      pontos = 0;
+      saldo = -1;
+      triggerIAChute();        // função separada (abaixo!)
+    }
+  }
+
+  console.log(`🏅 TREINO FINAL | Tent.: ${tent} | Pontos: ${pontos} | Saldo: ${saldo}`);
+
+  // 📝 Mostra resultado bonito:
+  const finalMsg = success
+    ? `🎯 Missão cumprida! ${state.mission}`
+    : `❌ Missão encerrada... A missão era ${state.mission}.`;
+
+  notifyTop(`${finalMsg}  
+  🧮 Tentativa: ${tent}  
+  🏆 Pontos: ${pontos}  
+  ⚽ Saldo de gols: ${saldo}`);
   }
 
   // Regras de pontuação (SEM ajuda)
@@ -122,6 +168,7 @@ const supabase = createClient(
     if (attempt === 1) { state.points += 3; state.goals += 3; }
     else if (attempt === 2) { state.points += 3; state.goals += 2; }
     else if (attempt === 3) { state.points += 3; state.goals += 1; }
+    else if (attempt === 4) { state.points += 3; /* gols = 0 */ }
     // Se acertar na 4ª? Requisito não especificou.
     // Assumi: sem bônus de gols e sem pontos (ajuste se desejar).
   }
@@ -134,6 +181,11 @@ function scoreWithHelp(attempt){
   else if (attempt === 4) { state.points += 1; /* gols = 0 */ }
 }
 
+function triggerIAChute() {
+  notifyTop("⚽ A IA chutou — GOL DO ADVERSÁRIO!", 5000);
+  animateTeam("circleOpp", getOpponentPositions(), null, "ataque");
+}
+
   // Clique no botão Treino
   $btnTreino?.addEventListener("click", () => {
     if (state.active) {
@@ -141,61 +193,137 @@ function scoreWithHelp(attempt){
       return;
     }
     startTraining();
+});
+
+// === ANALISE DA IA ===
+window.addEventListener("ia:analyze:done", ({ detail }) => {
+  const isCorrect = detail?.detectedFormation === state.mission;
+
+  // 🔢 Incrementa tentativas corretamente
+  state.attempts = (state.attempts || 0) + 1;
+  console.log("📢 Tentativa nº", state.attempts);
+
+  // 🧼 LIMPA DEBUG VISUAL ANTES DE CADA RESPOSTA
+  if (typeof clearDebugVisual === "function") clearDebugVisual();
+
+  // 🟢 ACERTOU (não importa a tentativa)
+  if (isCorrect) {
+    const saldo = Math.max(3 - (state.attempts - 1), 0);
+    endTraining(true, { pontos: 3, gols: saldo });
+
+    if (typeof showVictoryOverlay === "function") {
+      showVictoryOverlay(`🏆 Mandou bem! +3 pontos, +${saldo} gols`);
+    }
+    return;
+  }
+
+  // 🔴 ERROU — agora ver caso a caso:
+  if (state.attempts < 3) {
+    notifyTop(`❌ Ainda não é ${state.mission}. Tentativa ${state.attempts}/4`);
+    return;
+  }
+
+  if (state.attempts === 3) {
+    notifyTop(`⚠️ Última chance! ${state.mission} ativo. Tentativa 3/4`);
+    return;
+  }
+
+  // 🟥 4ª TENTATIVA = IA CHUTA O GOL!  (SE errou)
+  if (state.attempts >= 4) {
+    notifyTop("⚽ IA VAI CHUTAR! Missão encerrada.");
+    setTimeout(() => iaChutarGol(), 800);
+    endTraining(false);
+    return;
+  }
+});
+
+  
+function showVictoryOverlay(text = "Missão encerrada! Parabéns!") {
+  const overlay = document.getElementById("victory-overlay");
+  const victoryText = document.getElementById("victory-text");
+  const model = document.getElementById("victory-model");
+
+  if (!overlay) {
+    console.warn("⚠ overlay NÃO encontrado no DOM");
+    return;
+  }
+  
+  // 🌟 Carregar modelo GLB com segurança
+  if (model) {
+    model.src = "./models/vitoria.glb";       // ou /models/victoria.glb
+    console.log("📦 Modelo 3D carregado:", model.src);
+  } else {
+    console.warn("⚠ victory-model NÃO encontrado no DOM!");
+  }
+
+  victoryText.textContent = text;
+  overlay.style.display = "flex";
+
+  requestAnimationFrame(() => {
+    overlay.style.opacity = "1";
   });
+}
 
-  // Resultado da IA após “Análise IA”
-  window.addEventListener("ia:analyze:done", (ev) => {
-    if (!state.active || state.solved) return;
-    const data = ev.detail || {};
-    const detected = (data?.detectedFormation || "").trim();
-    if (!detected) return;
+function closeVictoryOverlay() {
+  const overlay = document.getElementById("victory-overlay");
 
-    // Contabiliza tentativa
-    state.attempts = Math.min(4, state.attempts + 1);
+  if (!overlay) return;
 
-    // Acertou a missão?
-    const success = detected === state.mission;
+  overlay.style.opacity = "0";
+  // 💡 Agora só esconde depois de clicar em OK no pop-up de missão
+  setTimeout(() => {
+    overlay.style.display = "none";
+  }, 800);
 
-    if (success) {
-      if (state.usedHelpThisAttempt) {
-        scoreWithHelp(state.attempts);
-      } else {
-        scoreNoHelp(state.attempts);
-      }
-      syncHUD();
-      state.solved = true;
-      endTraining(true);
+  // 📌 NOVO POP-UP: só segue após clicar em OK
+  setTimeout(() => {
+    showNextMissionPopup();
+  }, 900);
+}
 
-      // auto-encadeia nova missão (opcional). Comente se não quiser.
-      setTimeout(startTraining, 1100);
-      return;
-    }
+// 🆕 POP-UP NOVA MISSÃO (com botão OK)
+function showNextMissionPopup() {
+  const box = document.createElement("div");
+  box.style = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.75);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    z-index:200001;
+    backdrop-filter: blur(4px);
+    color:white;
+    font-size:1.6em;
+    text-align:center;
+  `;
+  box.innerHTML = `
+    <div>⚽ Preparado para a <b>próxima missão</b>?</div>
+    <button id="btn-next-mission" style="
+      margin-top:25px;
+      padding:10px 20px;
+      background:#28a745;
+      border:none;
+      border-radius:10px;
+      font-size:1em;
+      color:white;
+      cursor:pointer;
+      box-shadow:0 0 8px rgba(0,0,0,0.4);
+    ">OK</button>
+  `;
+  document.body.appendChild(box);
 
-    // Errou
-    if (state.attempts < 3) {
-      // Ainda tem tentativas “normais”
-      notifyTop(`❌ Ainda não é ${state.mission}. Tentativa ${state.attempts}/3.`);
-      // reset ajuda p/ próxima tentativa
-      state.usedHelpThisAttempt = false;
-      return;
-    }
+  document.getElementById("btn-next-mission").onclick = () => {
+    box.remove();
+    if (typeof startTraining === "function") startTraining(); // 🧠 NOVA MISSÃO
+  };
+}
 
-    if (state.attempts === 3) {
-      // Oferece “última tentativa” (4ª)
-      notifyTop(`⚠️ Última chance opcional (4ª). Se errar, perde 1 gol pró. Ajuste e aperte "Análise IA" de novo.`);
-      // reset ajuda p/ próxima tentativa
-      state.usedHelpThisAttempt = false;
-      return;
-    }
+// ⚠ IMPORTANTE! Exportar para escopo global:
+window.showVictoryOverlay = showVictoryOverlay;
+window.closeVictoryOverlay = closeVictoryOverlay;
 
-    // 4ª tentativa e errou ⇒ penalidade
-    if (state.attempts >= 4) {
-      state.goals = Math.max(0, state.goals - 1);
-      syncHUD();
-      notifyTop(`🚫 4ª errada: -1 gol pró. Missão encerrada.`);
-      endTraining(false);
-    }
-  });
 
   // === Pop-up oferecendo ajuda do treinador ===
 	function showAskForTraineeToHelp() {
@@ -312,7 +440,88 @@ $rkSave?.addEventListener("click", async () => {
   notifyTop("Pontuação salva no ranking! ✅");
   fetchRanking();
 });
-
-
 })();
+
+// 📢 Quando o treinador ajudar → animar como no modo normal
+window.addEventListener("coach:help-requested", () => {
+  if (!window.isTrainingMode) return;
+  console.log("💬 Treinador deu ajuda — animando formação correta!");
+
+  if (!window.state?.mission) return;
+
+  const targetFormation = window.state.mission; // missão atual do treino
+  const formations = window.FORMATIONS || {};
+
+  const from = formations[window.lastFormation || "4-4-2"];
+  const to = formations[targetFormation];
+
+  if (from && to) {
+    // 👉 animação igual ao MODO NORMAL
+    animateFormationTransition("circle", from, to, "analiseTreino");
+    window.lastFormation = targetFormation;
+  }
+});
+
+function iaChutarGol() {
+  const bola = getBall();
+  const jogadores = getGuaraniPositions();
+  if (!bola || !jogadores?.length) return;
+
+  // 🧠 pega jogador mais próximo da bola
+  let closest = jogadores[0];
+  let minDist = Infinity;
+  jogadores.forEach(p => {
+    const dx = p.left - bola.left;
+    const dy = p.top - bola.top;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < minDist) { minDist = dist; closest = p; }
+  });
+
+  // 🥅 GOL ESQUERDO
+  const goalX = 30;
+  const goalY = bola.top;
+
+  animateBallKick(closest, goalX, goalY);
+}
+
+function animateBallKick(player, gx, gy) {
+  const ballEl = document.getElementById("ball");
+  if (!ballEl) return;
+
+  let frame = 0;
+  const steps = 40;
+  const sx = parseFloat(ballEl.style.left);
+  const sy = parseFloat(ballEl.style.top);
+
+  const interval = setInterval(() => {
+    frame++;
+    const t = frame / steps;
+    ballEl.style.left = (sx + (gx - sx) * t) + "px";
+    ballEl.style.top = (sy + (gy - sy) * t) + "px";
+
+    if (frame >= steps) {
+      clearInterval(interval);
+      notifyTop("🥅 ⚽ GOOOOOL DO GUARANI!");
+    }
+  }, 15);
+}
+
+
+// ESCUTAR EVENTO DA ALEXA → treino.js
+const socket = window.socket;  // já existe no seu front!
+
+socket.on("alexa-formation", ({ formation }) => {
+  notifyTop(`🎙️ Alexa solicitou: ${formation}`);
+
+  const formations = window.FORMATIONS || {};
+  const to = formations[formation];
+
+  if (to) {
+    animateFormationTransition("circleOpp", null, to, "alexa"); // USE TIME BRANCO!
+  } else {
+    notifyTop("⚠️ Formação não encontrada: " + formation);
+  }
+});
+
+
 

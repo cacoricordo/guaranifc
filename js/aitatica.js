@@ -161,10 +161,7 @@ if (hudBox) {
     const mode = window.trainingPlayMode ? "training" : "match";
     animateFormationTransition("circle", fromFormation, toFormation, mode);
  }
-   window.dispatchEvent(new CustomEvent("ia:analyze:done", {
-     detail: data
-   }));
-   console.log("📢 IA notify treino com:", data.detectedFormation);
+
   } catch (err) {
     console.error("AI analyze error:", err);
     if (typeof notify === "function") notify("❌ Falha na análise da IA!", 3000);

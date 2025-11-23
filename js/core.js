@@ -18,6 +18,8 @@ window.FIELD_WIDTH  = field.clientWidth  || window.innerWidth;
 window.FIELD_HEIGHT = field.clientHeight || window.innerHeight;
 const FIELD_RIGHT_GOAL_X = FIELD_WIDTH - 20; // ajuste conforme seu campo
 
+window.notify = window.notifyTop;
+
 function isGoalRight(ballEl) {
   const goalEl = document.getElementById("gol2-square");
   if (!ballEl || !goalEl) return false;
@@ -429,13 +431,28 @@ function aiAutoKickTowardsLeftGoal(playerEl) {
     // centro do gol
     const goalY = gr.top + (gr.height / 2);
 
-    // direção do chute
-    const dx = -1; // esquerda
-    const dy = (goalY - br.top) * 0.06; // ajusta trajetória vertical
+// 💥 VELOCIDADE MONSTRA (POMBO SEM ASA)
+   const dx = -18;    // muito mais força na horizontal
+   const dy = (goalY - br.top) * 0.09; // correção vertical mais agressiva
 
-    // força do chute
-    ballVelocity.x = dx * 14;
-    ballVelocity.y = dy;
+   // 🌀 EFEITO DE ROTAÇÃO (rosca / trivela)
+   // cria leve curvatura na bola conforme ela chega perto do gol
+   let spin = (Math.random() * 2 - 1) * 0.6;   // rotação leve aleatória
+   ball.style.transition = "transform 0.15s linear";
+   ball.style.transform = `rotate(${spin}rad)`;  // faz a bola girar
+
+   // leva essa rotação para o deslocamento físico
+   const curve = (Math.random() * 2 - 1) * 0.8;
+   ballVelocity.x = dx + curve;     // desvia durante a viagem
+   ballVelocity.y = dy + curve * 0.4;  // chance de fazer “subir e cair”
+
+   // 🪄 ANIMAÇÃO NO AR — sobe um pouco e cai fortemente
+   ball.style.transition = "all 0.08s linear";
+   ball.style.top = (by - 12) + "px";     // pequena subida
+   setTimeout(() => {                     // e queda!
+     ball.style.top = (by + 18) + "px";
+    }, 150);
+
     ballMoving = true;
 }
    

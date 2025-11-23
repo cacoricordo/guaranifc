@@ -978,6 +978,11 @@ app.post("/ai/vision-tactic", async (req, res) => {
 io.on("connection", (socket) => {
 
   console.log("🟢 Novo cliente conectado:", socket.id);
+  
+  setTimeout(() => {
+  io.emit("alexa-formation", { formation: "4-3-3" });
+  console.log("🔥 Emitido para frontend via socket.io!");
+}, 3000);
 
   socket.on("join-room", async (room) => {
     console.log("📥 SERVER RECEBEU join-room:", room);
@@ -1205,20 +1210,74 @@ app.get("/ranking", (req, res) => {
 
 // 💡 NOVA ROTA PARA ALEXA → server.js
 app.post("/alexa/formation", (req, res) => {
-  const { formation, room = "treino" } = req.body;
+  const requestType = req.body.request?.type;
+  console.log("📩 Tipo de requisição:", requestType);
 
-  // validação
-  if (!formation || !isTacticallyValid(formation)) {
-    return res.status(400).json({ error: "Formação inválida" });
+  switch (requestType) {
+    case "LaunchRequest":
+      // resposta ao "Alexa, abrir treinador tático"
+      return res.json({
+        version: "1.0",
+        response: {
+          shouldEndSession: false,
+          outputSpeech: {
+            type: "PlainText",
+            text: "Olá treinador! Diga uma formação. Exemplo: quatro três três."
+          }
+        }
+      });
+
+    case "IntentRequest":
+      return handleFormationIntent(req, res);
+
+    default:
+      return res.json({
+        version: "1.0",
+        response: {
+          shouldEndSession: true,
+          outputSpeech: {
+            type: "PlainText",
+            text: "Não entendi. Tente dizer a formação, por exemplo: quatro quatro dois."
+          }
+        }
+      });
+  }
+});
+
+function handleFormationIntent(req, res) {
+  let formation = req.body.request?.intent?.slots?.formation?.value;
+
+  if (!formation) {
+    return res.json({
+      version: "1.0",
+      response: {
+        shouldEndSession: false,
+        outputSpeech: {
+          type: "PlainText",
+          text: "Não entendi a formação. Tente dizer quatro três três."
+        }
+      }
+    });
   }
 
-  console.log(`🎙️ Alexa pediu formação: ${formation}`);
+  // 🔧 NORMALIZA → 433 vira 4-3-3
+  formation = formation.replace(/(\d)(?=\d)/g, "$1-");
 
-  // 🔥 ENVIA PARA O FRONT (socket.io)
-  io.to(room).emit("alexa-formation", { formation });
+  // mover o time via socket!
+  io.emit("alexa-formation", { formation });
 
-  return res.json({ ok: true, msg: `Formação ${formation} enviada ao front.` });
-});
+  return res.json({
+    version: "1.0",
+    response: {
+      shouldEndSession: true,
+      outputSpeech: {
+        type: "PlainText",
+        text: `Formação ${formation} enviada para o campo!`
+      }
+    }
+  });
+}
+
 
 // === Inicializa Render ===
 const PORT = process.env.PORT || 10000;

@@ -211,10 +211,10 @@
       </model-viewer>
   </div>
   
-<script src="js/formations.js"></script>
+<script src="js/formations.js" defer></script>
 <script src="js/sheenpath.js"></script>
-<script src="js/core.js"></script> 
-<script src="js/aitatica.js"></script>
+<script src="js/core.js" defer></script> 
+<script src="js/aitatica.js" defer></script>
 <script src="js/fullscreen.js"></script>
 <script src="js/desenhotatico.js"></script>
 <script src="js/chat.js"></script>
@@ -344,5 +344,53 @@
 
 <script type="module" src="js/treino.js"></script>
 <script src="js/pin.js"></script>
+<!-- === OVERLAY DE VITÓRIA COM 3D === -->
+<div id="victory-overlay" style="
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.85);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  z-index:200000;
+  backdrop-filter: blur(6px);
+  text-align:center;
+  color:white;
+  padding:20px;
+  opacity:0;
+  transition: opacity 0.8s ease;
+">
+  <model-viewer id="victory-model"
+    src=""
+    style="width:260px;height:260px;"
+    auto-rotate
+    disable-zoom
+    exposure="1.2"
+    shadow-intensity="1">
+  </model-viewer>
+
+  <div id="victory-text" style="
+    font-size:2em;
+    margin-top:20px;
+    font-weight:700;
+    text-shadow:0 0 12px rgba(255,255,255,0.5);
+  "></div>
+
+  <button onclick="closeVictoryOverlay()" style="
+    margin-top:30px;
+    padding:12px 22px;
+    background:#28a745;
+    border:none;
+    border-radius:10px;
+    font-size:1.1em;
+    color:white;
+    cursor:pointer;
+    box-shadow:0 0 10px rgba(0,0,0,0.4);
+  ">
+    OK
+  </button>
+</div>
+
 </body>
 </html>

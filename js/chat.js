@@ -29,9 +29,17 @@ function dockChat() {
 }
 
 let chatOpen = false;
+let welcomeMessageShown = false;
+
+const WELCOME_MESSAGE = "Boa pra nós! Bem vindo(a) à Bliblioteca Futebolísica do professor Carlos Alberto Silva! Sou uma IA criada para ser canal construtivo entre torcedor e comissão técnica! Você agora faz parte da comissão técnica. Use a mesa tática para explanar sua idéias táticas. Agora quando você xingar o jogador estará xingando à si próprio. *..na vitória ou na derrota, HSG!*";
+const COLD_BOOT_MESSAGE = "Aguarde um momento estou carregando o servidor da Biblioteca! 1 minutinho, se assobiar viro o jogo ou subo pro ataque. Não adianda reclamar! O sistema é lento.";
 
 function openChat() {
   dockChat();
+  if (!welcomeMessageShown) {
+    appendMessage("bot", WELCOME_MESSAGE);
+    welcomeMessageShown = true;
+  }
 }
 
 function minimizeChat() {
@@ -66,7 +74,7 @@ function appendMessage(sender, text) {
 }
 
 // ----------------------------------------------------
-// Envio da mensagem e integração com IA do Careca
+// Envio da mensagem e integração com IA da Biblioteca C.A.Silva
 // ----------------------------------------------------
 chatSend.addEventListener("click", async () => {
   const message = chatInput.value.trim();
@@ -75,6 +83,10 @@ chatSend.addEventListener("click", async () => {
   appendMessage("user", message);
   chatInput.value = "";
 
+  const coldBootTimer = setTimeout(() => {
+    appendMessage("bot", COLD_BOOT_MESSAGE);
+  }, 6000);
+
   try {
     const res = await fetch(`${url_render}/api/chat`, {
       method: "POST",
@@ -82,14 +94,15 @@ chatSend.addEventListener("click", async () => {
       body: JSON.stringify({ message })
     });
 
+    clearTimeout(coldBootTimer);
     const data = await res.json();
-    appendMessage("bot", data.reply || "O Careca ficou em silêncio...");
+    appendMessage("bot", data.reply || "A Biblioteca C.A.Silva ficou em silêncio...");
 
     // volta ao estado original (aberto e dockado)
     dockChat();
     chatBody.scrollTop = chatBody.scrollHeight;
 
-    // ⚽ Se o Careca retornou uma formação, monta imediatamente (sem esperar IA)
+    // ⚽ Se a Biblioteca C.A.Silva retornou uma formação, monta imediatamente (sem esperar IA)
     if (data.formationRequested) {
       console.log("⚽ Comando tático do chat:", data.formationRequested);
       window.dispatchEvent(new CustomEvent("coach:help-requested"));
@@ -181,12 +194,13 @@ chatSend.addEventListener("click", async () => {
           }, 500);
         })
         .catch(e => {
-          appendMessage("bot", "Erro de comunicação com o Careca.");
+          appendMessage("bot", "Erro de comunicação com a Biblioteca C.A.Silva.");
           console.error(e);
         });
     }
   } catch (e) {
-    appendMessage("bot", "Erro de comunicação com o Careca.");
+    clearTimeout(coldBootTimer);
+    appendMessage("bot", "Erro de comunicação com a Biblioteca C.A.Silva.");
     console.error(e);
   }
 });

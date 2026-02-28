@@ -14,13 +14,25 @@
     <link rel="stylesheet" href="styles.css">
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZDWS2F3NE8"></script>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
-    <script src="invicto2025.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js"></script>
+
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
 
-      gtag('config', 'G-ZDWS2F3NE8');
+      gtag('config', 'G-ZDWS2F3NE8', {
+      send_page_view: false
+      });
+
+      if (!window.__pageview_sent__) {
+      window.__pageview_sent__ = true;
+
+      gtag('event', 'page_view', {
+      page_path: location.pathname,
+      page_title: document.title
+      });
+    }
     </script>
 </head>
 <body style="
@@ -118,6 +130,30 @@
   ✎ Desenho
 </button>
 
+<button id="plan-record-btn" class="force-bottom"
+  style="position:fixed;top:323px;left:430px;z-index:10000;
+         font-size:0.7em;padding:8px 14px;border-radius:8px;
+         background:#333;color:#fff;border:none;cursor:pointer;
+         box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+  ● Record
+</button>
+
+<button id="plan-play-btn" class="force-bottom"
+  style="position:fixed;top:323px;left:505px;z-index:10000;
+         font-size:0.7em;padding:8px 14px;border-radius:8px;
+         background:#222;color:#fff;border:none;cursor:pointer;
+         box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+  ▶ Play
+</button>
+
+<button id="plan-pause-btn" class="force-bottom"
+  style="position:fixed;top:323px;left:570px;z-index:10000;
+         font-size:0.7em;padding:8px 14px;border-radius:8px;
+         background:#222;color:#fff;border:none;cursor:pointer;
+         box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+  ⏸ Pause
+</button>
+
 <button id="treino-btn" class="force-bottom"
   style="position:fixed;top:323px;left:237px;z-index:10000;
          font-size:0.7em;padding:8px 16px;border-radius:8px;
@@ -183,19 +219,17 @@
 </div>
 
 
-<!-- === Chat do Ex-atacante camisa 9, Careca=== -->
+<!-- === Chat da Biblioteca C.A.Silva=== -->
 <div id="chat-container" style="
   position:fixed;bottom:20px;right:50px;width:300px;height:70vh;
   background:rgba(0,0,0,0.8);color:#fff;border-radius:10px;
   flex-direction:column;overflow:hidden;z-index:4000;
   font-family:'Segoe UI',sans-serif;font-size:14px;">
 <div id="chat-header" style="background:#222;padding:10px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:8px;color:#fff;">
-  <img src="img/escudo-guaranifc.png" alt="Careca" style="width:24px;height:24px;border-radius:50%;">
-  Careca
-</div>
+  <img src="img/escudo-guaranifc.png" alt="Biblioteca C.A.Silva" style="width:24px;height:24px;border-radius:50%;">Biblioteca C.A.Silva</div>
   <div id="chat-body" style="flex:1;overflow-y:auto;padding:10px;display:none;"></div>
   <div id="chat-input-area" style="display:none;border-top:1px solid #333;padding:6px;gap:4px;">
-    <input id="chat-input" type="text" placeholder="Fala 4-3-3 pro Careca" 
+    <input id="chat-input" type="text" placeholder="Fale 4-3-3 para a Biblioteca C.A.Silva" 
       style="flex:1;padding:6px;border:none;border-radius:6px;font-size:14px;">
     <button id="chat-send" style="background:#0066cc;color:#fff;border:none;
       border-radius:6px;padding:6px 10px;cursor:pointer;">Enviar</button>
@@ -217,6 +251,7 @@
 <script src="js/aitatica.js" defer></script>
 <script src="js/fullscreen.js"></script>
 <script src="js/desenhotatico.js"></script>
+<script src="js/plan-record.js"></script>
 <script src="js/chat.js"></script>
 
 <div id="tactical-status" style="
@@ -270,9 +305,9 @@
   </button>
 
   <!-- ✨ Gols pró -->
-  <div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.7);color:#c0c0c0;border:1px solid rgba(255,255,255,0.2);padding:6px 10px;border-radius:10px;">
-    ✨ <span id="goals-value" style="color:#c0c0c0;font-weight:700;">0</span>
-  </div>
+  <button id="btn-market" style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.7);color:#c0c0c0;border:1px solid rgba(255,255,255,0.2);padding:6px 10px;border-radius:10px;cursor:pointer;">
+    💰 <span id="goals-value" style="color:#c0c0c0;font-weight:700;">0</span>
+  </button>
 
 </div>
 
@@ -342,6 +377,7 @@
   <span id="invicto-notify"></span>
 </div>
 
+<script src="fase/trainers.js"></script>
 <script type="module" src="js/treino.js"></script>
 <script src="js/pin.js"></script>
 <!-- === OVERLAY DE VITÓRIA COM 3D === -->
@@ -391,6 +427,35 @@
     OK
   </button>
 </div>
+<!-- 🛒 MARKETPLACE -->
+<div id="popup-market" class="popup-market">
+  <div class="market-content">
+    <h3>🛒 Marketplace</h3>
 
+    <div id="marketplace"></div>
+    <div id="market-items">
+      <div>Carregando...</div>
+    </div>
+
+    <button id="add-token-metamask" class="market-btn">
+      ➕ Add Token GOLS na MetaMask
+    </button>
+
+    <button id="btn-show-gols-balance" class="market-btn">
+      📊 Ver saldo GOLS na minha carteira
+    </button>
+
+    <button id="close-market" class="market-close">
+      Fechar
+    </button>
+  </div>
+</div>
+<script src="./tokens-api-go/js/erc20_gols.js"></script> 
+<script type="module" src="marketplace.js"></script>
+<div id="coach-popup">
+  <h2></h2>
+  <div id="coach-content"></div>
+  <button class="close" onclick="closeCoachPopup()">OK</button>
+</div>
 </body>
 </html>

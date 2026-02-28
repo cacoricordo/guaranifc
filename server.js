@@ -762,16 +762,22 @@ if (req.body.manualFormation) {
 }
 
 
- // === 3) Detecta fase ANTES da contraformação ===
-    const { phase, bloco, compactacao } = detectPhase(possession, opponentFormation);
+// === 4) Detecta fase ANTES da contraformação ===
+const { phase, bloco, compactacao } = detectPhase(possession, opponentFormation);
 
- // Só reage taticamente se o clustering NÃO caiu no fallback
- if (detectedFormation === opponentFormation) {
-   detectedFormation = chooseCounterFormation(opponentFormation, possession, phase);
-   console.log("⚽ Formação ALTERADA por reação tática:", detectedFormation);
- } else {
-   console.log("🧠 Mantendo formação detectada visualmente (clustering):", detectedFormation);
- }
+// Só reage taticamente SE NÃO for treino
+if (!req.body.trainingMode && detectedFormation === opponentFormation) {
+  detectedFormation = chooseCounterFormation(opponentFormation, possession, phase);
+  console.log("⚽ Formação ALTERADA por reação tática:", detectedFormation);
+} else {
+  console.log(
+    req.body.trainingMode
+      ? "🎓 Modo TREINO — sem contra-formação, mantendo detecção/clustering"
+      : "🧠 Mantendo formação detectada visualmente (clustering): " + detectedFormation
+  );
+}
+
+
     // === 5) Só agora gera o posicionamento real do Guarani ===
     const { greenAI } = buildGreenFromFormation(
       detectedFormation,
@@ -978,11 +984,6 @@ app.post("/ai/vision-tactic", async (req, res) => {
 io.on("connection", (socket) => {
 
   console.log("🟢 Novo cliente conectado:", socket.id);
-  
-  setTimeout(() => {
-  io.emit("alexa-formation", { formation: "4-3-3" });
-  console.log("🔥 Emitido para frontend via socket.io!");
-}, 3000);
 
   socket.on("join-room", async (room) => {
     console.log("📥 SERVER RECEBEU join-room:", room);
@@ -1040,7 +1041,7 @@ socket.on("disconnect", async () => {
 });
 });// ✅ Socket real-time para aprimoramento esportivo
 
-// === Endpoint de chat do Careca (usando OpenAI) ===
+// === Endpoint de chat da Biblioteca C.A.Silva (usando OpenAI) ===
 
 
 const groq = new Groq({
@@ -1063,11 +1064,11 @@ app.post("/api/chat", async (req, res) => {
         {
           role: "system",
           content: `
-Você é CARECA, ex-centroavante do Guarani, camisa 9.
-Mentalidade de artilheiro: simples, direto e eficaz.
-Pensa como finalizador: atacar espaço, antecipar, decidir rápido.
-Explica o porquê das escolhas táticas.
-Use linguagem de boleiro, mas com inteligência.
+Você é a biblioteca Carlos Alberto Silva, finado treinador do Guarani Futebol Clube.
+Seu foco é disciplina tática, organização defensiva e inteligência coletiva.
+Você ensina, não critica.
+Você explica conceitos com clareza e autoridade.
+Você valoriza o equilíbrio entre defesa e ataque.
 `
         },
         {
@@ -1079,7 +1080,7 @@ Use linguagem de boleiro, mas com inteligência.
 
     const reply =
       completion.choices?.[0]?.message?.content ||
-      "O Careca ficou em silêncio...";
+      "A Biblioteca C.A.Silva ficou em silêncio...";
 
     // Detecta formação no texto do usuário
     function extractFormation(text) {
@@ -1206,77 +1207,6 @@ app.get("/ranking", (req, res) => {
 
   res.json({ top: filtered });
 });
-
-
-// 💡 NOVA ROTA PARA ALEXA → server.js
-app.post("/alexa/formation", (req, res) => {
-  const requestType = req.body.request?.type;
-  console.log("📩 Tipo de requisição:", requestType);
-
-  switch (requestType) {
-    case "LaunchRequest":
-      // resposta ao "Alexa, abrir treinador tático"
-      return res.json({
-        version: "1.0",
-        response: {
-          shouldEndSession: false,
-          outputSpeech: {
-            type: "PlainText",
-            text: "Olá treinador! Diga uma formação. Exemplo: quatro três três."
-          }
-        }
-      });
-
-    case "IntentRequest":
-      return handleFormationIntent(req, res);
-
-    default:
-      return res.json({
-        version: "1.0",
-        response: {
-          shouldEndSession: true,
-          outputSpeech: {
-            type: "PlainText",
-            text: "Não entendi. Tente dizer a formação, por exemplo: quatro quatro dois."
-          }
-        }
-      });
-  }
-});
-
-function handleFormationIntent(req, res) {
-  let formation = req.body.request?.intent?.slots?.formation?.value;
-
-  if (!formation) {
-    return res.json({
-      version: "1.0",
-      response: {
-        shouldEndSession: false,
-        outputSpeech: {
-          type: "PlainText",
-          text: "Não entendi a formação. Tente dizer quatro três três."
-        }
-      }
-    });
-  }
-
-  // 🔧 NORMALIZA → 433 vira 4-3-3
-  formation = formation.replace(/(\d)(?=\d)/g, "$1-");
-
-  // mover o time via socket!
-  io.emit("alexa-formation", { formation });
-
-  return res.json({
-    version: "1.0",
-    response: {
-      shouldEndSession: true,
-      outputSpeech: {
-        type: "PlainText",
-        text: `Formação ${formation} enviada para o campo!`
-      }
-    }
-  });
-}
 
 
 // === Inicializa Render ===

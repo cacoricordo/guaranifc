@@ -1,22 +1,33 @@
-// === Popup da camisa Invicto tecido Dry ===
-function popupInvicto() {
-  const popup = document.getElementById("popup-invicto");
-  popup.classList.add("show");
+function onInvictoReady(fn) {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", fn, { once: true });
+    return;
+  }
+
+  fn();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-
-  const closeBtn = document.getElementById("close-popup-invicto");
+onInvictoReady(() => {
   const invictoIcon = document.getElementById("invicto-icon");
+  const popupInvicto = document.getElementById("popup-invicto");
+  const closePopupInvicto = document.getElementById("close-popup-invicto");
 
-  if (closeBtn) {
-    closeBtn.addEventListener("click", () => {
-      document.getElementById("popup-invicto").classList.remove("show");
-    });
-  }
+  if (!invictoIcon || !popupInvicto) return;
 
-  if (invictoIcon) {
-    invictoIcon.addEventListener("click", popupInvicto);
-  }
+  const openPopup = () => {
+    popupInvicto.classList.add("show");
+  };
+
+  const closePopup = () => {
+    popupInvicto.classList.remove("show");
+  };
+
+  invictoIcon.addEventListener("click", openPopup);
+  closePopupInvicto?.addEventListener("click", closePopup);
+
+  popupInvicto.addEventListener("click", (event) => {
+    if (event.target === popupInvicto) {
+      closePopup();
+    }
+  });
 });
-

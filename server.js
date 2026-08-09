@@ -83,6 +83,26 @@ app.get("/", (req, res) => {
 const FIELD_WIDTH = 600;
 const FIELD_HEIGHT = 300;
 
+function findGoalkeeper(players = []) {
+  if (!Array.isArray(players) || players.length === 0) return null;
+  return players.reduce((gk, p) => (p.left < gk.left ? p : gk), players[0]);
+}
+
+function analyzeFieldThirds(players = []) {
+  if (!Array.isArray(players) || players.length === 0) {
+    return { def: 0, mid: 0, att: 0, shape: null };
+  }
+
+  const defLimit = FIELD_WIDTH * (2 / 8);
+  const midLimit = FIELD_WIDTH * (5 / 8);
+
+  const def = players.filter((p) => p.left < defLimit).length;
+  const mid = players.filter((p) => p.left >= defLimit && p.left < midLimit).length;
+  const att = players.filter((p) => p.left >= midLimit).length;
+
+  return { def, mid, att, shape: `${def}-${mid}-${att}` };
+}
+
 
 // === IA: Detector geométrico FIFA 2D ===
 function detectOpponentFormationAdvanced(players) {
@@ -105,15 +125,16 @@ function detectOpponentFormationAdvanced(players) {
   
   // === DETECÇÃO POR ELO (INTELIGÊNCIA TÁTICA REAL) ===
   const elo = detectEloFormation(noGK);
-  if (elo?.role === "zaga-4") {
+  if (elo?.zaga?.length === 4) {
   console.log("🧠 detectEloFormation: Linha de 4 zagueiros encontrada via cluster");
   
   // Agora buscamos os outros clusters pra definir:
   // 4-4-2 ? ou 4-2-3-1 ? ou 4-1-4-1 ?
   // Vamos usar os clusters baseado na altura (top) para montar as linhas:
 
-  const mids = noGK.filter(p => p.top > elo.avgY + 50 && p.top < elo.avgY + 130);
-  const atks = noGK.filter(p => p.top > elo.avgY + 130);
+  const avgY = elo.zaga.reduce((sum, p) => sum + p.top, 0) / elo.zaga.length;
+  const mids = noGK.filter(p => p.top > avgY + 50 && p.top < avgY + 130);
+  const atks = noGK.filter(p => p.top > avgY + 130);
 
   if (mids.length === 4 && atks.length === 2) return "4-4-2";
   if (mids.length === 3 && atks.length === 3) return "4-3-3";
@@ -160,7 +181,7 @@ function detectOpponentFormationAdvanced(players) {
 function detectEloFormation(players, maxDist = 70) {  // maxDist maior para tolerância real
   if (!players || players.length < 4) return null;
 
-  const roles = {};
+  const roles = { zaga: [], meio: [], ataque: [] };
   const clusters = [];
   const visited = new Set();
 
@@ -195,23 +216,52 @@ function detectEloFormation(players, maxDist = 70) {  // maxDist maior para tole
   }
 
   const FIELD_WIDTH = 600;
-  const T1 = FIELD_WIDTH / 3;
-  const T2 = FIELD_WIDTH * 2 / 3;
+  const DEF_LIMIT = FIELD_WIDTH * (2 / 8);
+  const MID_LIMIT = FIELD_WIDTH * (5 / 8);
 
   clusters.forEach(cluster => {
-    const avgX = cluster.reduce((s,p)=>s+p.left,0) / cluster.length;
-    if      (cluster.length === 4 && avgX < T1) roles.zaga = cluster;
-    else if (cluster.length === 3 && avgX < T2) roles.meio = cluster;
-    else if (cluster.length === 3 && avgX > T2) roles.ataque = cluster;
+    const avgX = cluster.reduce((s, p) => s + p.left, 0) / cluster.length;
+    if (avgX < DEF_LIMIT) {
+      roles.zaga.push(...cluster);
+    } else if (avgX < MID_LIMIT) {
+      roles.meio.push(...cluster);
+    } else {
+      roles.ataque.push(...cluster);
+    }
   });
+
+  if (!roles.zaga.length || !roles.meio.length || !roles.ataque.length) {
+    players.forEach(player => {
+      if (player.left < DEF_LIMIT) roles.zaga.push(player);
+      else if (player.left < MID_LIMIT) roles.meio.push(player);
+      else roles.ataque.push(player);
+    });
+  }
+
+  roles.zaga = Array.from(new Set(roles.zaga));
+  roles.meio = Array.from(new Set(roles.meio));
+  roles.ataque = Array.from(new Set(roles.ataque));
 
   return roles;
 }
 
 function interpretFormation(roles) {
-  if (roles?.zaga && roles?.meio && roles?.ataque) return "4-3-3";
-  if (roles?.zaga && roles?.meio) return "4-4-2";
-  return "4-2-3-1";  // fallback moderno
+  const z = roles?.zaga?.length || 0;
+  const m = roles?.meio?.length || 0;
+  const a = roles?.ataque?.length || 0;
+
+  if (z === 4 && m === 3 && a === 2) return "4-1-3-2";
+  if (z === 4 && m === 4 && a === 2) return "4-4-2";
+  if (z === 4 && m === 3 && a === 3) return "4-3-3";
+  if (z === 4 && m === 2 && a === 4) return "4-2-4";
+  if (z === 4 && m === 5 && a === 1) return "4-5-1";
+  if (z === 5 && m === 3 && a === 2) return "5-3-2";
+  if (z === 3 && m === 5 && a === 2) return "3-5-2";
+  if (z === 3 && m === 4 && a === 3) return "3-4-3";
+  if (z === 4 && m === 1 && a === 4) return "4-1-4-1";
+  if (z === 4 && m === 2 && a === 3) return "4-2-3-1";
+
+  return `${z}-${m}-${a}`;
 }
 
 
@@ -631,10 +681,12 @@ function detectHybridFormation(players) {
 // 🧠 DETECÇÃO TÁTICA ESPECIAL → 4-1-4-1 DINÂMICO
 if ((def === 5 && mid === 4 && att === 1) ||        // ex: 5-4-1 (volante afundado)
     (def === 4 && mid === 4 && att === 1)) {        // ex: 4-4-1 (flutuante)
-  
-  // Identificar quem é o volante (6) e quem é o 9
-  const volantes = playersNoGK.filter(p => p.left < T1 && p !== gk);
-  const atacantes = playersNoGK.filter(p => p.left > T2);
+  const DEF_LIMIT = FIELD_WIDTH * (2 / 8);
+  const MID_LIMIT = FIELD_WIDTH * (5 / 8);
+
+  // Identificar quem é o volante (mais recuado no meio) e quem é o 9
+  const volantes = playersNoGK.filter(p => p.left >= DEF_LIMIT && p.left < MID_LIMIT);
+  const atacantes = playersNoGK.filter(p => p.left >= MID_LIMIT);
 
   if (volantes.length === 1 && atacantes.length === 1) {
     console.log("🔥 Detectado 4-1-4-1 dinâmico");
@@ -659,42 +711,48 @@ app.post("/ai/analyze", async (req, res) => {
      console.log("⚽ FORMATIONS RECARREGADAS:", Object.keys(global.FORMATIONS));
    }
 
-     const { green = [], black = [], ball = {}, possession = "preto", tacticalRoles = {} } = req.body;
+	     const {
+         green = [],
+         black = [],
+         ball = {},
+         possession = "preto",
+         tacticalRoles = {},
+         opponentFormation: opponentFormationInput = null,
+         opponentFormationVision: opponentFormationVisionInput = null
+       } = req.body;
+       const opponentFormationHint = opponentFormationVisionInput || opponentFormationInput || null;
 
-	 // Identifica GK pelo jogador mais recuado
-	 const findGoalkeeper = (players) => {
-     if (!players || players.length === 0) return null;
-     return players.reduce((gk, p) => (p.left < gk.left ? p : gk), players[0]);
-     };
+	     const gk = findGoalkeeper(black);
+	     const playersNoGK = black.filter(p => p !== gk);
+	     console.log("🧤 Backend GK detectado:", gk);
 
-     const gk = findGoalkeeper(black);
-     const playersNoGK = black.filter(p => p !== gk);
-     console.log("🧤 Backend GK detectado:", gk);
+	     // 🔒 Fallback SEGURO – SEMPRE EXISTE
+	     let detectedFormation = "4-4-2";
 
-     // 🔒 Fallback SEGURO – SEMPRE EXISTE
-     let detectedFormation = "4-4-2";
-
-     // 🔍 IA TÁTICA HÍBRIDA (Terço + ELO + GK)
-     const hybridFormation = detectHybridFormation(playersNoGK); // front já envia formato válido
-     if (hybridFormation && hybridFormation !== "indefinido") {
-     detectedFormation = hybridFormation;
-     console.log("🧠 Formação detectada via IA HÍBRIDA (ELO + terços + GK):", hybridFormation);
-   }
-   
+	     // 🔍 IA TÁTICA HÍBRIDA (Terço + ELO + GK)
+	     const hybridFormation = playersNoGK.length >= 4 ? detectHybridFormation(playersNoGK) : null;
+	     if (hybridFormation && hybridFormation !== "indefinido") {
+	     detectedFormation = hybridFormation;
+	     console.log("🧠 Formação detectada via IA HÍBRIDA (ELO + terços + GK):", hybridFormation);
+	   }
+	   
 // --- RESULTADOS DISPONÍVEIS --- //
-const viaVision  = req.body.opponentFormationVision || null;  // visão tática (Google Vision)
-const viaTerços  = analyzeFieldThirds(playersNoGK)?.shape || null;  
-const viaHibrida = detectHybridFormation(playersNoGK); // já calculado
+const viaVision  = opponentFormationHint;  // visão tática (Google Vision / front)
+const viaTerços  = playersNoGK.length ? analyzeFieldThirds(playersNoGK)?.shape : null;
+const viaHibrida = hybridFormation;
 
 // 1) Coletar votos
 const votes = {};
 [viaVision, viaTerços, viaHibrida].forEach(form => {
-  if (!form) return;
-  votes[form] = (votes[form] || 0) + 1;
+	  if (!form) return;
+	  votes[form] = (votes[form] || 0) + 1;
 });
 
 // 2) Escolher a mais votada
-let bestFormation = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
+const voteKeys = Object.keys(votes);
+let bestFormation = voteKeys.length
+  ? voteKeys.reduce((a, b) => votes[a] > votes[b] ? a : b)
+  : detectedFormation;
 
 console.log("📊 Votação tática:", votes);
 console.log("✔ Formação FINAL:", bestFormation);
@@ -715,9 +773,9 @@ detectedFormation = bestFormation;
    }
  }
      
-     const opponentFormation = (req.body.opponentFormationVision && req.body.opponentFormationVision !== "null")
-       ? req.body.opponentFormationVision
-       : detectOpponentFormationAdvanced(black);
+	     const opponentFormation = (opponentFormationHint && opponentFormationHint !== "null")
+	       ? opponentFormationHint
+	       : detectOpponentFormationAdvanced(black);
 
      // === 1) DETECÇÃO VISUAL / CLUSTERING — PRIORIDADE MÁXIMA ===
        if (black && black.length >= 6) {

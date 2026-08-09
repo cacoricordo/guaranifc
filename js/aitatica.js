@@ -63,7 +63,11 @@ async function startVision() {
     else console.warn("🤖 Careca avaliando o adversário...");
 
     // 1️⃣ Envia imagem + posições para a IA Vision
-    const visionData = await sendVisionTactic(); // UMA VEZ APENAS!
+    const sendFn = (typeof sendVisionTactic === "function") ? sendVisionTactic
+           : (typeof window.sendVisionTactic === "function") ? window.sendVisionTactic
+           : null;
+    if (!sendFn) throw new Error('sendVisionTactic not available on the page');
+    const visionData = await sendFn(); // UMA VEZ APENAS!
     console.log("📊 Visão Tática (backend):", visionData);
 
     // 🧠 Salvar visão (para votação híbrida no core.js)

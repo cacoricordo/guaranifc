@@ -53,6 +53,50 @@ if (!hudBox) {
   console.warn("⚠ hudBox não encontrado no DOM!");
 }
 
+// ============================
+// ♻️ CACHE DA LEITURA TÁTICA
+// ============================
+const TACTIC_CACHE_TTL = 15000;
+
+function normalizePositions(list = []) {
+  return list.map((p) => ({
+    id: p.id,
+    left: Math.round((Number(p.left) || 0) * 10) / 10,
+    top: Math.round((Number(p.top) || 0) * 10) / 10
+  }));
+}
+
+function captureTacticSnapshot() {
+  const green = typeof getGuaraniPositions === "function"
+    ? normalizePositions(getGuaraniPositions() || [])
+    : [];
+  const black = typeof getOpponentPositions === "function"
+    ? normalizePositions(getOpponentPositions() || [])
+    : [];
+  const ball = typeof getBall === "function" ? getBall() : null;
+  return { green, black, ball };
+}
+
+function tacticCacheKey(snapshot) {
+  try {
+    return JSON.stringify(snapshot);
+  } catch {
+    return null;
+  }
+}
+
+function readTacticCache(key) {
+  const cache = window.tacticReadCache;
+  if (!cache || cache.key !== key) return null;
+  if (Date.now() - cache.ts > TACTIC_CACHE_TTL) return null;
+  return cache;
+}
+
+function saveTacticCache(key, data, snapshot) {
+  if (!key || !data) return;
+  window.tacticReadCache = { key, data, snapshot, ts: Date.now() };
+}
+
 
 // ==============================
 // 🧠 FUNÇÃO PRINCIPAL DA IA VISION
@@ -62,12 +106,25 @@ async function startVision() {
     if (typeof notify === "function") notify("🤖 Careca avaliando o adversário...", 3000);
     else console.warn("🤖 Careca avaliando o adversário...");
 
+    const snapshot = captureTacticSnapshot();
+    const cacheKey = tacticCacheKey(snapshot);
+    const cached = cacheKey ? readTacticCache(cacheKey) : null;
+
     // 1️⃣ Envia imagem + posições para a IA Vision
     const sendFn = (typeof sendVisionTactic === "function") ? sendVisionTactic
            : (typeof window.sendVisionTactic === "function") ? window.sendVisionTactic
            : null;
     if (!sendFn) throw new Error('sendVisionTactic not available on the page');
-    const visionData = await sendFn(); // UMA VEZ APENAS!
+    let visionData = null;
+    if (cached?.data) {
+      visionData = cached.data;
+      window.lastBlackPositions = cached.snapshot?.black || window.lastBlackPositions;
+      console.log("♻️ Cache tático HIT — reutilizando leitura anterior");
+    } else {
+      visionData = await sendFn();
+      saveTacticCache(cacheKey, visionData, snapshot);
+    }
+    if (!visionData) throw new Error("vision-data-empty");
     console.log("📊 Visão Tática (backend):", visionData);
 
     // 🧠 Salvar visão (para votação híbrida no core.js)
@@ -205,8 +262,15 @@ aiBtn.addEventListener('click', async function () {
   aiBtn.disabled = true;
   aiBtn.textContent = "Carregando";
 
+  const resetTimeout = setTimeout(() => {
+    aiBtn.disabled = false;
+    aiBtn.textContent = "Análise IA";
+    notify?.("⏳ IA demorou. Tente novamente.", 3000);
+  }, 12000);
+
   const ok = await ensureFormationsReady();
   if (!ok) {
+    clearTimeout(resetTimeout);
     notify("❌ FORMATIONS não carregou — tente novamente.", 4000);
     aiBtn.disabled = false;
     aiBtn.textContent = "Análise IA";
@@ -215,11 +279,15 @@ aiBtn.addEventListener('click', async function () {
 
   try {
     aiBtn.textContent = "⚙️";
-    await startVision();
+    await Promise.race([
+      startVision(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("vision-timeout")), 10000))
+    ]);
   } catch (err) {
     console.error("IA falhou:", err);
-    notify?.("❌ Falha na IA!", 4000);
+    notify?.(err?.message === "vision-timeout" ? "⏳ IA demorou. Tente novamente." : "❌ Falha na IA!", 4000);
   } finally {
+    clearTimeout(resetTimeout);
     // 🔑 SEMPRE volta ao normal!
     aiBtn.disabled = false;
     aiBtn.textContent = "Análise IA";

@@ -1,4 +1,63 @@
-        .background-square {  /* Gramado */
+.loading {
+  font-size: 18px;
+  color: #f8f8f8;
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+/* ===== MARKETPLACE POPUP ===== */
+#notifyTop, .notify-top {
+  position: fixed;      /* garante que fique sempre visível */
+  top: 20px;
+  right: 20px;
+  z-index: 199999 !important;  /* maior que o modal  */
+  pointer-events: auto;
+}
+/* --- POPUP MARKETPLACE --- */
+.popup-market {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: none;              /* ESSENCIAL! */
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.market-content {
+  background: #111;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #333;
+  width: 330px;
+  max-height: 80vh;
+  overflow-y: auto;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+
+.market-btn {
+  display: block;
+  margin-top: 12px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  background: #333;
+  color: #fff;
+  border: 1px solid #444;
+  cursor: pointer;
+}
+
+.market-close {
+  margin-top: 15px;
+  background: #444;
+}
+
+
+        .background-square {  /* Gramado para aprimoramento esportivo */
             position: absolute;
             left: 20px;
             top: 20px;
@@ -228,12 +287,46 @@
             font-size: 14px;
             user-select: none;
         }
+        
+		#room-user-indicator {
+		position: fixed;
+		top: 55px;              /* logo abaixo do HUD das estrelas */
+		right: 20px;            /* canto superior direito */
+		background: rgba(0, 0, 0, 0.65);
+		padding: 8px 14px;
+		border-radius: 10px;
+		border: 1px solid #ffffff33;
+		font-size: 14px;
+		font-weight: 600;
+		color: #fff;
+		text-align: right;
+		line-height: 16px;
+		display: none;          /* só aparece quando conectar */
+		z-index: 200000;        /* acima de tudo */
+		backdrop-filter: blur(6px);
+		min-width: 80px;
+		}
+		
+.menu-icon {
+  display: inline-block;
+  cursor: pointer;
+}
 
+.menu-icon span {
+  display: block;
+  width: 20px;
+  height: 3px;
+  margin: 2px 0;
+  background: blue; /* color of the lines */
+  border-radius: 4px;
+}
 
-        .circle {
+        .circle, .circleOpp {
             width: 26px; height: 26px;
             background: #33aaff; border-radius: 50%;
             position: absolute;
+            z-index: 10000 !important;
+            pointer-events: auto !important;
             cursor: grab;
             touch-action: none;
             display: flex;
@@ -247,20 +340,39 @@
             user-select: none;
             text-shadow: 0 0 3px rgba(0,0,0,0.6);
         }
-        #circle1 { left: 25px; top: 160px; background: #ff33aa; }
-        #circle2 { left: 160px; top: 270px; background: #000000; }
-        #circle3 { left: 120px; top: 130px; background: #000000; }
-        #circle4 { left: 120px; top: 200px; background: #000000; }
-        #circle5 { left: 200px; top: 160px; background: #000000; }
-        #circle6 { left: 160px; top: 40px; background: #000000; }
-        #circle7 { left: 300px; top: 270px; background: #000000; }
-        #circle8 { left: 260px; top: 160px; background: #000000; }
-        #circle9 { left: 370px; top: 160px; background: #000000; }
-        #circle10 { left: 230px; top: 120px; background: #000000; }
-        #circle11 { left: 320px; top: 40px; background: #000000; }
-        #circle23 { left: 620px; top: 150px; background: #660000; }
+ 
+.debug-marker,
+.debug-line {
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+		
+		/* GOLEIRO */
+		#circle1  { left:  25px; top: 160px; background:#FFFFFF; color:green; }
+	
+		/* DEFESA (linha de 4) */
+		#circle2  { left: 70px; top:  50px; background:#FFFFFF; color:green; } /* lateral esquerdo */
+		#circle3  { left: 70px; top: 120px; background:#FFFFFF; color:green; } /* zagueiro esquerdo */
+		#circle4  { left: 70px; top: 190px; background:#FFFFFF; color:green; } /* zagueiro direito */
+		#circle5  { left: 70px; top: 260px; background:#FFFFFF; color:green; } /* lateral direito */
+
+		/* MEIO (triângulo 3) */
+		#circle6  { left: 140px; top: 160px; background:#FFFFFF; color:green; } /* volante (6) */
+		#circle7  { left: 160px; top: 90px; background:#FFFFFF; color:green; } /* meia esquerda (8) */
+		#circle8  { left: 160px; top: 230px; background:#FFFFFF; color:green; } /* meia direita (10) */
+
+		/* ATAQUE (linha de 3) */
+		#circle9  { left: 250px; top: 70px; background:#FFFFFF; color:green; } /* ponta esquerda (11) */
+		#circle10 { left: 270px; top: 160px; background:#FFFFFF; color:green; } /* centroavante (9) */
+		#circle11 { left: 250px; top: 250px; background:#FFFFFF; color:green; } /* ponta direita (7) */
+
+        #circle23 { left: 600px; top: 150px; background: #660000; }
         #circle24 { left: 420px; top: 40px; background: #ffffff; }
-        body { margin: 0; overflow: hidden; background-color: green; }
+
+        html, body {
+          margin: 0;
+          overflow: auto; /* iOS bloqueia fullscreen se overflow:hidden */
+        }
 
 /* === Botão IA com spinner === */
 .ai-button {
@@ -348,7 +460,8 @@
   font-size: 1.5em;
 }
 #tactical-hud {
-  transition: opacity 0.8s ease, background 0.4s ease, z-index: 5;
+  transition: opacity 0.8s ease, background 0.4s ease;
+
 }
 
     /* --- LOGO CENTRAL --- */
@@ -358,7 +471,7 @@
   right: 20px;
   width: 180px;
   height: 180px;
-  z-index: 8000;
+  z-index: 2000;
   filter: drop-shadow(0 0 20px rgba(255,255,255,0.25));
   pointer-events: auto;
 
@@ -375,7 +488,7 @@
 #popup-invicto {
   position: fixed;
   bottom: 80px;
-  right: 20px;
+  right: 10px;
   width: 250px;
   height: 300px;
   background: rgba(0,0,0,0.85);
@@ -468,38 +581,60 @@
   transform: scale(1.12);
   background: rgba(0, 150, 255, 0.9);
 }
-/* ===== POPUP DO TREINADOR (IA) ===== */
+/* ====== POPUP GLOBAL ====== */
 #coach-popup {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-
-  width: 350px;
-  padding: 18px;
-  background: rgba(0,0,0,0.90);
-  border: 1px solid rgba(255,255,255,0.4);
-  border-radius: 12px;
-  color: white;
-  font-family: 'Segoe UI', sans-serif;
-  font-size: 16px;
-  text-align: center;
-
-  z-index: 99999; /* FICA NA FRENTE DE TUDO */
+  transform: translate(-50%, -50%) scale(0.85);
+  width: 90%;
+  max-width: 380px;
+  background: #111;
+  border-radius: 14px;
+  padding: 22px;
+  color: #fff;
+  font-family: "Inter", sans-serif;
+  font-size: 15px;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px);
   opacity: 0;
+  transition: 0.25s ease-out;
+  z-index: 99999;
   pointer-events: none;
-  transition: opacity .3s ease;
 }
 
 #coach-popup.show {
   opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
   pointer-events: auto;
 }
+
+#coach-popup h2 {
+  font-size: 20px;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+#coach-popup .close {
+  margin-top: 18px;
+  width: 100%;
+  padding: 12px 0;
+  border-radius: 10px;
+  background: #ffd700;
+  color: #111;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 
 #chat-container {
   display: flex;
   flex-direction: column;
   height: 70vh;
+  z-index: 2147483647 !important;
+  transition: all 0.3s ease;
 }
 
 #chat-body {
@@ -520,5 +655,45 @@
     bottom: env(keyboard-inset-height, 0);
   }
 }
+/* Detecta iPhone / Safari iOS */
+@supports (-webkit-touch-callout: none) {
 
+  /* Ajusta os botões fixos */
+  button,
+  #fullscreen-overlay,
+  #ai-analise-btn,
+  #pen-path-btn,
+  #treino-btn {
+    height: 38px !important;      /* deixa mais fino */
+    padding: 6px 10px !important; /* reduz padding */
+    font-size: 0.8em !important;
+  }
 
+  /* Opcional: empurra os botões para cima do "safe area" */
+  .ios-bottom-fix {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Se quiser jogar os botões todos para o bottom */
+  .force-bottom {
+    position: fixed !important;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    top: auto !important;
+  }
+}
+/* === Centraliza o pop-up do treino no centro do campo === */
+#treino-missao,
+.missao-popup,
+#mission-popup,
+#treino-popup {
+  position: fixed;
+  left: 50%;
+  top: 50%;  
+  transform: translate(-50%, -50%);
+  z-index: 200000;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

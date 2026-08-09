@@ -1,8 +1,8 @@
-/* ===== Desenho Tático: correção para offset mobile (HiDPI + CSS size sync) ===== */
+/* ===== Desenho Tático p/ aprimoramento esportivo ===== */
 (function(){
   const canvas = document.getElementById("trace-canvas");
   const penBtn = document.getElementById("pen-path-btn");
-  const socket = window.socket || (window.io ? io() : null);
+  const socket = window.socket;
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
 
@@ -41,13 +41,19 @@
   let drawing = false;
   let currentPath = [];
   let pointerId = null;
+  function getClearDelay() {
+    if (window.planRecordActive && Number.isFinite(window.planRecordClearDelay)) {
+      return window.planRecordClearDelay;
+    }
+    return 4000;
+  }
 
   // Toggle pen button: ativa/desativa captura de eventos
   penBtn.addEventListener('click', () => {
     penMode = !penMode;
     penBtn.style.background = penMode ? "#33aaff" : "#222";
     canvas.style.pointerEvents = penMode ? "auto" : "none";
-    penBtn.textContent = penMode ? "✎ Desenhando..." : "✎ Desenho Tático";
+    penBtn.textContent = penMode ? "✎ Desenh..." : "✎ Desenho";
     if (penMode) {
       canvas.style.zIndex = "1000";
     } else {
@@ -100,7 +106,7 @@
     try { canvas.releasePointerCapture(pointerId); } catch (er) {}
     ctx.closePath();
     if (socket && currentPath.length > 1) {
-      socket.emit('path_draw', { path: currentPath });
+      socket.emit('path_draw', { path: currentPath, room: window.currentRoomCode });
     }
 
     setTimeout(() => {
@@ -109,7 +115,7 @@
       ctx.globalAlpha = 1.0;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
-    }, 4000);
+    }, getClearDelay());
 
     currentPath = [];
     pointerId = null;
@@ -149,14 +155,14 @@
     drawing = false;
     ctx.closePath();
 
-    if (socket && currentPath.length > 1) socket.emit('path_draw', { path: currentPath });
+    if (socket && currentPath.length > 1) socket.emit('path_draw', { path: currentPath, room: window.currentRoomCode });
     setTimeout(() => {
       ctx.save();
       ctx.globalCompositeOperation = "destination-out";
       ctx.globalAlpha = 1.0;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
-    }, 4000);
+    }, getClearDelay());
 
     currentPath = [];
   }, { passive: false });
@@ -164,6 +170,12 @@
   // recebe e desenha paths de outros clientes (coord em CSS pixels)
   if (socket) {
     socket.on('path_draw', (data) => {
+		
+	  if (!window.currentRoomCode || data.room !== window.currentRoomCode) {
+      console.log("⛔ path ignorado (sala diferente)");
+      return;
+      }
+      
       if (!data || !Array.isArray(data.path) || data.path.length === 0) return;
       ctx.beginPath();
       for (let i = 0; i < data.path.length; i++) {
@@ -180,7 +192,7 @@
         ctx.globalAlpha = 1.0;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.restore();
-      }, 4000);
+      }, getClearDelay());
     });
   }
 })();

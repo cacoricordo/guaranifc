@@ -1,46 +1,45 @@
-/* === Controle de fullscreen + trava landscape quando possível === */
+/* === Controle de aprimoramento esportivo === */
 const overlay = document.getElementById("fullscreen-overlay");
 const exitBtn = document.getElementById("exit-fullscreen-btn");
 
-async function enterFullscreen() {
-  const el = document.documentElement; // tela cheia no documento
+function enterFullscreen() {
+  const el = document.documentElement; // fullscreen na página toda
 
-  // entrar em fullscreen
-  if (el.requestFullscreen) await el.requestFullscreen();
-  else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
-  else if (el.msRequestFullscreen) await el.msRequestFullscreen();
+  // ✅ iOS precisa ser direto e sem async/await
+  if (el.webkitRequestFullscreen) {
+    el.webkitRequestFullscreen(); // Safari iOS
+  } else if (el.requestFullscreen) {
+    el.requestFullscreen(); // Chrome / Android / Desktop
+  }
 
-  overlay.style.display = "none"; // remove overlay
+  overlay.style.display = "none";
 
-  // ✅ Tenta travar landscape (somente Android / PWA / Chrome)
+  // ✅ Tenta travar landscape (Android / Chrome)
   if (screen.orientation && screen.orientation.lock) {
-    try {
-      await screen.orientation.lock("landscape");
-      console.log("🔒 Landscape travado.");
-    } catch (e) {
-      console.warn("⚠️ Não foi possível travar orientação:", e);
-    }
+    screen.orientation.lock("landscape").catch(() => {});
   }
 }
 
 function exitFullscreen() {
-  if (document.exitFullscreen) document.exitFullscreen();
-  else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-  else if (document.msExitFullscreen) document.msExitFullscreen();
+  if (document.webkitExitFullscreen) {
+    document.webkitExitFullscreen(); // iOS Safari
+  } else if (document.exitFullscreen) {
+    document.exitFullscreen(); // Chrome / Android / Desktop
+  }
 }
 
 overlay.addEventListener("click", enterFullscreen);
 exitBtn.addEventListener("click", exitFullscreen);
 
 document.addEventListener("fullscreenchange", () => {
-  // se saiu do fullscreen, volta o overlay
-  if (!document.fullscreenElement) {
+  const isFullscreen =
+    document.fullscreenElement || document.webkitFullscreenElement;
+
+  if (!isFullscreen) {
     overlay.style.display = "flex";
 
-    // desbloqueia orientação quando sair
     if (screen.orientation && screen.orientation.unlock) {
       screen.orientation.unlock();
-      console.log("🔓 Orientação desbloqueada.");
     }
   }
 });

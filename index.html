@@ -2,26 +2,47 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>SE Palmeiras, Campo Tático</title>
+    <title>Guarani FC, CT Virtual</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Guarani FC, CT Virtual com mesa tatica, treinos, analise com IA e experiencias interativas.">
+    <link rel="canonical" href="https://guarani.osinvictos.com.br/">
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:site_name" content="Os Invictos">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://www.osinvictos.com.br/dashboard/sepalmeiras/">
+    <meta property="og:url" content="https://guarani.osinvictos.com.br/">
+    <meta property="og:title" content="Guarani FC, CT Virtual">
+    <meta property="og:description" content="Guarani FC, CT Virtual com mesa tatica, treinos, analise com IA e experiencias interativas.">
+    <meta property="og:image" content="https://www.osinvictos.com.br/dashboard/guaranifc/img/guaranifc-previa.jpg">
+    <meta property="og:image:secure_url" content="https://www.osinvictos.com.br/dashboard/guaranifc/img/guaranifc-previa.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1352">
+    <meta property="og:image:height" content="760">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="https://www.osinvictos.com.br/dashboard/sepalmeiras/img/sepalmeiras-previa.jpg">
-    <meta property="og:title" content="SE Palmeiras, Campo Tático">
-    <meta property="og:description" content="Campeão Invicto em 1960">
-    <meta property="og:image" content="https://www.osinvictos.com.br/dashboard/sepalmeiras/img/sepalmeiras-previa.jpg">
+    <meta name="twitter:title" content="Guarani FC, CT Virtual">
+    <meta name="twitter:description" content="Guarani FC, CT Virtual com mesa tatica, treinos, analise com IA e experiencias interativas.">
+    <meta name="twitter:image" content="https://www.osinvictos.com.br/dashboard/guaranifc/img/guaranifc-previa.jpg">
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZDWS2F3NE8"></script>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
-    <script src="invicto1960.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js"></script>
+
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
 
-      gtag('config', 'G-ZDWS2F3NE8');
+      gtag('config', 'G-ZDWS2F3NE8', {
+      send_page_view: false
+      });
+
+      if (!window.__pageview_sent__) {
+      window.__pageview_sent__ = true;
+
+      gtag('event', 'page_view', {
+      page_path: location.pathname,
+      page_title: document.title
+      });
+    }
     </script>
 </head>
 <body style="
@@ -32,7 +53,7 @@
   background-attachment: fixed;
 ">
 
-  <!-- ===== Campo Tático ===== -->
+  <!-- ===== Campo Tático para aprimoramento esportivo ===== -->
     <div id="background-square" class="background-square"></div>
     <div id="background-line"></div>
     <div id="background-line2"></div>
@@ -67,65 +88,135 @@
   <div id="circle9" class="circle">9</div>
   <div id="circle10" class="circle">10</div>
   <div id="circle11" class="circle">11</div>
-  <div id="circle12" class="circle" style="background:#FFFFFF;"></div>
-  <div id="circle13" class="circle" style="background:#33FFCC;">2</div>
-  <div id="circle14" class="circle" style="background:#33FFCC;">6</div>
-  <div id="circle15" class="circle" style="background:#33FFCC;">3</div>
-  <div id="circle16" class="circle" style="background:#33FFCC;">4</div>
-  <div id="circle17" class="circle" style="background:#33FFCC;">8</div>
-  <div id="circle18" class="circle" style="background:#33FFCC;">5</div>
-  <div id="circle19" class="circle" style="background:#33FFCC;">7</div>
-  <div id="circle20" class="circle" style="background:#33FFCC;">10</div>
-  <div id="circle21" class="circle" style="background:#33FFCC;">11</div>
-  <div id="circle22" class="circle" style="background:#33FFCC;">9</div>
+  <div id="circle12" class="circle" style="background: transparent;"></div>
+  <div id="circle13" class="circle" style="background:#125424;">2</div>
+  <div id="circle14" class="circle" style="background:#125424;">4</div>
+  <div id="circle15" class="circle" style="background:#125424;">3</div>
+  <div id="circle16" class="circle" style="background:#125424;">5</div>
+  <div id="circle17" class="circle" style="background:#125424;">8</div>
+  <div id="circle18" class="circle" style="background:#125424;">6</div>
+  <div id="circle19" class="circle" style="background:#125424;">10</div>
+  <div id="circle20" class="circle" style="background:#125424;">7</div>
+  <div id="circle21" class="circle" style="background:#125424;">11</div>
+  <div id="circle22" class="circle" style="background:#125424;">9</div>
   <div id="circle23" class="circle">01</div>
-  <div id="circle24" class="circle" style="left:280px;top:140px;background:#fff;z-index:12000"></div>
+  <div id="circle24" class="circle" style="left:288px;top:130px;z-index:12000;background-image: url('img/adidasball.jpg');"></div>
   </div>
   <canvas id="trace-canvas" width="600" height="300"
    style="position:absolute;left:20px;top:20px;z-index:10;border-radius:8px;background:transparent;"></canvas>
 
-  <div id="ai-notification" style="display:none;position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:#33aaff;color:#fff;padding:18px 32px;border-radius:8px;z-index:10001;font-size:1.1em;box-shadow:0 2px 10px rgba(0,0,0,0.18);"></div>
+ <div id="ai-notification" style="display:none;position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:#33aaff;color:#fff;padding:18px 32px;border-radius:8px;z-index:10001;font-size:1.1em;box-shadow:0 2px 10px rgba(0,0,0,0.18);"></div>
 
-  <!-- Botões -->
-  <div id="fullscreen-overlay" style="position:fixed;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);color:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;font-size:2em;cursor:pointer;z-index:10055">
-    Toque para entrar na Mesa Tática
+<!-- Botões -->
+<div id="fullscreen-overlay"
+  style="position:fixed;left:0;top:0;width:100vw;height:100vh;
+         background:rgba(0,0,0,0.7);color:#fff;display:flex;
+         align-items:center;justify-content:center;z-index:10055;
+         font-size:2em;cursor:pointer;">
+  Toque para entrar na Mesa Tática
+</div>
+
+<button id="exit-fullscreen-btn" class="force-bottom"
+  style="position:fixed;top:323px;left:383px;z-index:10000;
+         font-size:0.7em;padding:8px 16px;border-radius:8px;
+         background:red;color:#fff;border:none;cursor:pointer;
+         box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+  x
+</button>
+
+<button id="ai-analise-btn" class="force-bottom"
+  style="position:fixed;top:323px;left:153px;z-index:10000;
+         font-size:0.7em;padding:8px 16px;border-radius:8px;
+         background:#1E90FF;color:#fff;border:none;cursor:pointer;
+         box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+  Análise IA
+</button>
+
+<button id="pen-path-btn" class="force-bottom"
+  style="position:fixed;top:323px;left:63px;z-index:10000;
+         font-size:0.7em;padding:8px 16px;border-radius:8px;
+         background:#222;color:#fff;border:none;cursor:pointer;
+         box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+  ✎ Desenho
+</button>
+
+
+<button id="treino-btn" class="force-bottom"
+  style="position:fixed;top:323px;left:237px;z-index:10000;
+         font-size:0.7em;padding:8px 16px;border-radius:8px;
+         background:#28a745;color:#fff;border:none;cursor:pointer;
+         box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+   Treino
+</button>
+
+<a href="https://www.osinvictos.com.br" id="btn-home"
+  style="position:fixed;top:323px;left:20px;z-index:10000;
+         font-size:0.6em;padding:8px 16px;border-radius:8px;
+         background:#222;color:#ffffff;text-decoration:none;
+         border:none;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15);
+         display:flex;align-items:center;justify-content:center;">
+  ⌂
+</a>
+
+
+<button id="btn-criar-campo"
+  style="position:fixed;top:323px;left:303px;z-index:10000;
+        font-size:0.7em;padding:8px 16px;border-radius:8px;
+        background:#007bff;color:#fff;border:none;cursor:pointer;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+ Conectar
+</button>
+
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script src="js/websocket.js"></script>
+
+<!-- === MODAL PARA PIN DE SALA PRIVADA === -->
+<div id="rt-room-modal" style="
+  position:fixed;inset:0;background:rgba(0,0,0,0.65);
+  display:none;align-items:center;justify-content:center;
+  z-index:99999;">
+
+  <div style="background:#111;padding:22px;border-radius:12px;
+      border:1px solid #444;display:flex;flex-direction:column;
+      gap:12px;width:260px;text-align:center;color:#fff;">
+
+    <h3>🔐 CT Privado</h3>
+    <p>Digite o PIN (4 números):</p>
+
+    <input id="rt-room-input" maxlength="4" placeholder="1234"
+      style="font-size:22px;text-align:center;padding:10px;border-radius:8px;border:none;">
+
+    <a id="whatsapp-share" href="#" target="_blank">
+      <button style="padding:10px;background:#25D366;border:none;border-radius:8px;color:#fff;cursor:pointer;">
+        📲 Enviar PIN no WhatsApp
+      </button>
+    </a>
+
+    <button id="rt-room-confirm"
+      style="padding:10px;background:#28a745;border:none;border-radius:8px;color:#fff;cursor:pointer;">
+      Entrar
+    </button>
+
+    <button id="rt-room-cancel"
+      style="padding:6px;background:#444;border:none;border-radius:8px;color:#fff;cursor:pointer;">
+      Cancelar
+    </button>
   </div>
+</div>
 
-  <button id="exit-fullscreen-btn" style="position:fixed;top:330px;left:250px;z-index:10000;">Sair (x)</button>
-  <button id="ai-analise-btn" style="position:fixed;top:330px;left:20px;z-index:10000;">Análise IA</button>
-  <button id="pen-path-btn" style="position:fixed;top:330px;left:120px;z-index:10000;">✎ Desenho Tático</button>
- 
-<a href="https://api.whatsapp.com/send?text=Check%20this%20out:%20https://www.osinvictos.com.br/dashboard/sepalmeiras/"
-   target="_blank"
-   style="text-decoration:none;">
-  <button style="position:fixed;top:360px;left:20px;z-index:10000;">
-    Convide via WhatsApp
-  </button>
-</a>
-<a href="https://www.facebook.com/sharer/sharer.php?u=https://www.osinvictos.com.br/dashboard/sepalmeiras/"
-   target="_blank"
-   style="text-decoration:none;">
-  <button style="position:fixed;top:360px;left:190px;z-index:10000;">
-    Interagir em Tempo-Real!
-  </button>
-</a>
-<script src="js/core.js"></script> 
-<script src="js/aitatica.js"></script>
-<script src="js/fullscreen.js"></script>
-<script src="js/desenhotatico.js"></script>
-<!-- === Chat do Treinador Abel Ferreira === -->
+
+<!-- === Chat da Biblioteca C.A.Silva=== -->
 <div id="chat-container" style="
   position:fixed;bottom:20px;right:50px;width:300px;height:70vh;
   background:rgba(0,0,0,0.8);color:#fff;border-radius:10px;
-  flex-direction:column;overflow:hidden;z-index:10002;
+  flex-direction:column;overflow:hidden;z-index:2147483647;
   font-family:'Segoe UI',sans-serif;font-size:14px;">
 <div id="chat-header" style="background:#222;padding:10px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:8px;color:#fff;">
-  <img src="img/escudo-sepalmeiras.png" alt="Abel Ferreira" style="width:24px;height:24px;border-radius:50%;">
-  Abel Ferreira
-</div>
+  <img src="img/escudo-guaranifc.png" alt="Biblioteca C.A.Silva" style="width:24px;height:24px;border-radius:50%;">Biblioteca C.A.Silva</div>
   <div id="chat-body" style="flex:1;overflow-y:auto;padding:10px;display:none;"></div>
   <div id="chat-input-area" style="display:none;border-top:1px solid #333;padding:6px;gap:4px;">
-    <input id="chat-input" type="text" placeholder="Fala com o Abel..." 
+    <input id="chat-input" type="text" placeholder="Fale 4-3-3 para a Biblioteca C.A.Silva" 
       style="flex:1;padding:6px;border:none;border-radius:6px;font-size:14px;">
     <button id="chat-send" style="background:#0066cc;color:#fff;border:none;
       border-radius:6px;padding:6px 10px;cursor:pointer;">Enviar</button>
@@ -140,8 +231,15 @@
         ar>
       </model-viewer>
   </div>
+  
+<script src="js/formations.js" defer></script>
+<script src="js/sheenpath.js"></script>
+<script src="js/core.js" defer></script> 
+<script src="js/aitatica.js" defer></script>
+<script src="js/fullscreen.js"></script>
+<script src="js/desenhotatico.js"></script>
 <script src="js/chat.js"></script>
-<script src="js/websocket.js"></script>
+
 <div id="tactical-status" style="
   position:fixed;
   top:20px;
@@ -163,9 +261,9 @@
 <!-- === HUD TÁTICO AVANÇADO === -->
 <div id="tactical-hud" style="
   position: absolute;
-  top: 15px;
-  right: 15px;
-  width: 230px;
+  top: 55px;
+  right: 5px;
+  width: 130px;
   background: rgba(0,0,0,0.7);
   color: #fff;
   padding: 10px;
@@ -176,21 +274,74 @@
   border: 1px solid rgba(255,255,255,0.2);
   box-shadow: 0 0 10px rgba(0,0,0,0.6);
   display: none;
-  z-index: 5;
+  z-index: 10005;
 ">
   <b>📊 Inteligência Tática</b><br>
-  <span id="hud-formations">Adversário: ? | Palmeiras: ?</span><br>
+  <span id="hud-formations">Adversário: ? | Guarani: ?</span><br>
   <span id="hud-phase">Fase: ?</span><br>
   <span id="hud-block">Bloco: ? | Compactação: ?</span>
+</div>
+
+<!-- SCORE HUD -->
+<div id="score-hud" style="position:fixed;top:20px;right:20px;z-index:10050;display:flex;gap:10px;align-items:center;">
+
+  <!-- ⭐ Pontos -->
+  <button id="star-points" style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.7);color:#ffd700;border:1px solid rgba(255,255,255,0.2);padding:6px 10px;border-radius:10px;cursor:pointer;">
+    ⭐ <span id="points-value" style="color:#ffd700;font-weight:700;">0</span>
+  </button>
+
+  <!-- ✨ Gols pró -->
+  <button id="btn-market" style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.7);color:#c0c0c0;border:1px solid rgba(255,255,255,0.2);padding:6px 10px;border-radius:10px;cursor:pointer;">
+    💰 <span id="goals-value" style="color:#c0c0c0;font-weight:700;">0</span>
+  </button>
+
+</div>
+
+<div id="room-user-indicator">
+    👥 1 jogador
+</div>
+
+<div id="ranking-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10060;
+  align-items:center;justify-content:center;">
+  <div style="width:min(92vw,560px);background:#121212;color:#fff;border:1px solid #333;border-radius:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);padding:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h3 style="margin:0;font-size:18px;">🏆 Ranking Invicto</h3>
+      <button id="ranking-close" style="background:transparent;border:none;color:#fff;font-size:20px;cursor:pointer;">×</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div style="background:#1e1e1e;padding:12px;border-radius:10px;">
+        <h4 style="margin:0 0 8px 0;font-size:14px;">Cadastrar/Entrar</h4>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <input id="rk-name" type="text" placeholder="Seu nome" style="padding:8px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+          <input id="rk-email" type="email" placeholder="Seu e-mail" style="padding:8px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+          <input id="rk-pass" type="password" placeholder="Senha" style="padding:8px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+          <button id="rk-save" style="background:#28a745;border:none;border-radius:8px;padding:10px;color:#fff;cursor:pointer;">
+            Salvar/Atualizar Pontuação
+          </button>
+        </div>
+      </div>
+      <div style="background:#1e1e1e;padding:12px;border-radius:10px;">
+        <h4 style="margin:0 0 8px 0;font-size:14px;">Tabela</h4>
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <button class="rk-tab" data-range="daily"  style="flex:1;background:#222;border:1px solid #333;color:#fff;border-radius:8px;padding:6px;cursor:pointer;">Diário</button>
+          <button class="rk-tab" data-range="weekly" style="flex:1;background:#222;border:1px solid #333;color:#fff;border-radius:8px;padding:6px;cursor:pointer;">Semanal</button>
+          <button class="rk-tab" data-range="monthly" style="flex:1;background:#222;border:1px solid #333;color:#fff;border-radius:8px;padding:6px;cursor:pointer;">Mensal</button>
+        </div>
+        <div id="rk-list" style="max-height:240px;overflow:auto;font-size:13px;line-height:1.5;"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ===== POPUP INVICTO ===== -->
 <div id="popup-invicto">
   <button id="close-popup-invicto">×</button>
 
-  <img src="img/invicto1960-verdebranco.png" alt="Invicto 1960" class="popup-img">
+  <img src="img/guaranifc.png" alt="Invicto 2025" class="popup-img">
 
-  <h3 class="popup-title">Invicto 1960</h3>
+  <h3 class="popup-title">Invicto 2025</h3>
   <p class="popup-price">R$99 / $25</p>
 
   <div class="popup-actions">
@@ -212,6 +363,86 @@
   <span id="invicto-notify"></span>
 </div>
 
+<script src="fase/trainers.js"></script>
+<script type="module" src="js/treino.js"></script>
+<script src="js/pin.js"></script>
+<!-- === OVERLAY DE VITÓRIA COM 3D === -->
+<div id="victory-overlay" style="
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.85);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  z-index:200000;
+  backdrop-filter: blur(6px);
+  text-align:center;
+  color:white;
+  padding:20px;
+  opacity:0;
+  transition: opacity 0.8s ease;
+">
+  <model-viewer id="victory-model"
+    src=""
+    style="width:260px;height:260px;"
+    auto-rotate
+    disable-zoom
+    exposure="1.2"
+    shadow-intensity="1">
+  </model-viewer>
 
+  <div id="victory-text" style="
+    font-size:2em;
+    margin-top:20px;
+    font-weight:700;
+    text-shadow:0 0 12px rgba(255,255,255,0.5);
+  "></div>
+
+  <button onclick="closeVictoryOverlay()" style="
+    margin-top:30px;
+    padding:12px 22px;
+    background:#28a745;
+    border:none;
+    border-radius:10px;
+    font-size:1.1em;
+    color:white;
+    cursor:pointer;
+    box-shadow:0 0 10px rgba(0,0,0,0.4);
+  ">
+    OK
+  </button>
+</div>
+<!-- 🛒 MARKETPLACE -->
+<div id="popup-market" class="popup-market">
+  <div class="market-content">
+    <h3>🛒 Marketplace</h3>
+
+    <div id="marketplace"></div>
+    <div id="market-items">
+      <div>Carregando...</div>
+    </div>
+
+    <button id="add-token-metamask" class="market-btn">
+      ➕ Add Token GOLS na MetaMask
+    </button>
+
+    <button id="btn-show-gols-balance" class="market-btn">
+      📊 Ver saldo GOLS na minha carteira
+    </button>
+
+    <button id="close-market" class="market-close">
+      Fechar
+    </button>
+  </div>
+</div>
+<script src="./tokens-api-go/js/erc20_gols.js"></script> 
+<script src="invicto2025.js"></script>
+<script type="module" src="marketplace.js"></script>
+<div id="coach-popup">
+  <h2></h2>
+  <div id="coach-content"></div>
+  <button class="close" onclick="closeCoachPopup()">OK</button>
+</div>
 </body>
 </html>

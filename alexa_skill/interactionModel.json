@@ -1,0 +1,47 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "treinador tático",
+      "intents": [
+        {
+          "name": "FormationIntent",
+          "slots": [
+            {
+              "name": "formation",
+              "type": "FORMATION_TYPE"
+            }
+          ],
+          "samples": [
+            "monta {formation}",
+            "treino de {formation}",
+            "formação {formation}",
+            "alexa montar {formation}",
+            "prepara {formation}",
+            "mover o time para {formation}",
+            "treino {formation}"
+          ]
+        },
+        { "name": "AMAZON.HelpIntent" },
+        { "name": "AMAZON.CancelIntent" },
+        { "name": "AMAZON.StopIntent" }
+      ],
+      "types": [
+        {
+          "name": "FORMATION_TYPE",
+          "values": [
+            { "name": { "value": "4-4-2" } },
+            { "name": { "value": "4-3-3" } },
+            { "name": { "value": "4-2-3-1" } },
+            { "name": { "value": "4-2-4" } },
+            { "name": { "value": "3-5-2" } },
+            { "name": { "value": "5-4-1" } },
+            { "name": { "value": "4-5-1" } },
+            { "name": { "value": "3-4-3" } },
+            { "name": { "value": "5-3-2" } },
+            { "name": { "value": "4-1-4-1" } }
+          ]
+        }
+      ]
+    }
+  }
+}

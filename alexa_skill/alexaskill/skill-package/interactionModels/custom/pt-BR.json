@@ -1,0 +1,87 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "treinador tático",
+      "intents": [
+       {
+  "name": "FormationIntent",
+  "slots": [
+    {
+      "name": "formation",
+      "type": "FORMATION_TYPE"
+    }
+  ],
+  "samples": [
+    "{formation}",
+    "formação {formation}",
+    "mudar para {formation}",
+    "muda para {formation}",
+    "usa {formation}",
+    "treino {formation}",
+    "vamos de {formation}",
+    "monta {formation}",
+    "quero {formation}",
+    "formação tática {formation}",
+    "montar {formation}",
+    "montar formação {formation}",
+    "esquema {formation}",
+    "tática {formation}",
+    "montar formação tática {formation}",
+    "montar o {formation}",
+    "jogar no {formation}"
+  ]
+},
+        { "name": "AMAZON.HelpIntent" },
+        { "name": "AMAZON.CancelIntent" },
+        { "name": "AMAZON.StopIntent" }
+      ],
+      "types": [
+        {
+          "name": "FORMATION_TYPE",
+          "values": [
+            {
+              "name": { "value": "4-4-2" },
+              "synonyms": ["quatro quatro dois", "442", "quatro quatro dois clássico"]
+            },
+            {
+              "name": { "value": "4-3-3" },
+              "synonyms": ["quatro três três", "433", "quatro três três ofensivo"]
+            },
+            {
+              "name": { "value": "4-2-3-1" },
+              "synonyms": ["quatro dois três um", "4231", "quatro dois três um avançado"]
+            },
+            {
+              "name": { "value": "4-2-4" },
+              "synonyms": ["quatro dois quatro", "424"]
+            },
+            {
+              "name": { "value": "3-5-2" },
+              "synonyms": ["três cinco dois", "352"]
+            },
+            {
+              "name": { "value": "5-4-1" },
+              "synonyms": ["cinco quatro um", "541"]
+            },
+            {
+              "name": { "value": "4-5-1" },
+              "synonyms": ["quatro cinco um", "451"]
+            },
+            {
+              "name": { "value": "3-4-3" },
+              "synonyms": ["três quatro três", "343"]
+            },
+            {
+              "name": { "value": "5-3-2" },
+              "synonyms": ["cinco três dois", "532"]
+            },
+            {
+              "name": { "value": "4-1-4-1" },
+              "synonyms": ["quatro um quatro um", "4141"]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

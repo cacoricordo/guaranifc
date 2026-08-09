@@ -1,0 +1,24 @@
+{
+  "askcliStatesVersion": "2020-03-31",
+  "profiles": {
+    "default": {
+      "skillInfrastructure": {
+        "@ask-cli/lambda-deployer": {
+          "deployState": {
+            "default": {},
+            "EU": {},
+            "FE": {}
+          }
+        }
+      },
+      "deploymentStatus": "COMPLETE",
+      "skillMetadata": {
+        "lastImportId": "amzn1.ask-package.import.8db48651-daaf-471a-aaba-02e2a00a1d34",
+        "lastImportTimestamp": "2025-11-22T18:10:37.053Z",
+        "lastDeployHash": "AGtnfsrtcLev9zeZLIRzok/+Jzc=",
+        "lastDeployType": "interaction-model"
+      },
+      "skillId": "amzn1.ask.skill.4c46a1a2-ffbf-49a8-9e0c-71e3418ac2e6"
+    }
+  }
+}

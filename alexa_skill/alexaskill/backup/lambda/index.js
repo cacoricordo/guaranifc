@@ -1,0 +1,1 @@
+// Backup removido – integração descontinuada.

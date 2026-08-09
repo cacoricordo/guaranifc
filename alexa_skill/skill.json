@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "publishingInformation": {
+      "locales": {
+        "pt-BR": {
+          "name": "Treinador IA Tático"
+        }
+      },
+      "isAvailableWorldwide": true,
+      "category": "SPORTS_NEWS"
+    },
+    "apis": {
+      "custom": {
+        "endpoint": {
+          "sslCertificateType": "Wildcard",
+		  "uri": "https://chanceful-metalline-coreen.ngrok-free.dev/alexa/formation"
+        }
+      }
+    },
+    "manifestVersion": "1.0"
+  }
+}

@@ -1,4 +1,6 @@
-import { OWNER_WALLET } from "./.env.js";
+// Endereço público que recebe pagamentos. Segredos ficam exclusivamente no
+// arquivo .env do servidor; não importe arquivos de ambiente no navegador.
+const OWNER_WALLET = "0x5d02bbe2b4d7fef3b1439a690e401462cadf316a";
 
 const GOLS_ADDRESS = "0xfC6526BF078CC632a9564741dA6dDC11ecA896b4";
 const GOLS_ERC20_ABI = window.GOLS_ERC20_ABI;

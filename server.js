@@ -229,13 +229,13 @@ function voteFormation(candidates = []) {
 function detectOpponentFormationAdvanced(players) {
   if (!players || players.length < 4) return "4-4-2";
 
-  const sortedByX = [...players].sort((a, b) => a.left - b.left);
-  const noGK = sortedByX.slice(1); // drop leftmost
-  const thirds = analyzeFieldThirds(noGK);
-  const lineFormation = detectFormationByLines(noGK);
-  const roles = detectEloFormation(noGK);
+  // O cliente envia somente os jogadores de linha (circle2..circle11).
+  const outfield = players;
+  const thirds = analyzeFieldThirds(outfield);
+  const lineFormation = detectFormationByLines(outfield);
+  const roles = detectEloFormation(outfield);
   const eloFormation = roles ? interpretFormation(roles) : null;
-  const templateMatch = detectFormationByTemplate(noGK);
+  const templateMatch = detectFormationByTemplate(outfield);
 
   const voted = voteFormation([
     { formation: lineFormation, weight: 3 },
@@ -621,6 +621,12 @@ function detectFormationByProximity(players, tolerance = 30) {
 
     // --- DETECTA PRESSÃO NA ÁREA DEFENSIVA ---
     function emergencyBlockIfUnderPressure(ball, blackPlayers) {
+    // A análise de formação pode ser feita sem bola (por exemplo, quando o
+    // canvas ainda não expôs getBall). Sem coordenadas não há pressão a medir.
+    if (!ball || !Number.isFinite(Number(ball.left)) || !Number.isFinite(Number(ball.top))) {
+      return null;
+    }
+
     // Verde defende À DIREITA do campo
     const AREA_GOLEIRO_X = FIELD_WIDTH - 90;  // ~ Grande Área (ajuste fino se quiser)
 
@@ -628,7 +634,7 @@ function detectFormationByProximity(players, tolerance = 30) {
     const ballInArea = ball.left >= AREA_GOLEIRO_X;
 
     // Algum adversário colidindo / muito próximo da bola?
-    const blackClose = blackPlayers.some(p => {
+    const blackClose = (Array.isArray(blackPlayers) ? blackPlayers : []).some(p => {
       return Math.hypot(p.left - ball.left, p.top - ball.top) < 35; // colisão / pressão
     });
 
@@ -688,9 +694,8 @@ function detectFormationByClustering(players) {
 function detectHybridFormation(players) {
   if (!players || players.length < 4) return "indefinido";
 
-  // 🧤 GK
-  const gk = findGoalkeeper(players);
-  const playersNoGK = players.filter(p => p !== gk);
+  // A entrada já contém somente os dez jogadores de linha.
+  const playersNoGK = players;
 
   // 📊 TERÇOS
   const thirds = analyzeFieldThirds(playersNoGK);
@@ -753,15 +758,14 @@ app.post("/ai/analyze", async (req, res) => {
        } = req.body;
        const opponentFormationHint = opponentFormationVisionInput || opponentFormationInput || null;
 
-	     const gk = findGoalkeeper(black);
-	     const playersNoGK = black.filter(p => p !== gk);
-	     console.log("🧤 Backend GK detectado:", gk);
+	     const playersNoGK = black;
+	     console.log("🧤 GK excluído no front; jogadores de linha recebidos:", playersNoGK.length);
 
 	     // 🔒 Fallback SEGURO – SEMPRE EXISTE
 	     let detectedFormation = "4-4-2";
 
 	     // 🔍 IA TÁTICA HÍBRIDA (Terço + ELO + GK)
-	     const hybridFormation = playersNoGK.length >= 4 ? detectHybridFormation(playersNoGK) : null;
+	     const hybridFormation = black.length >= 4 ? detectHybridFormation(black) : null;
 	     if (hybridFormation && hybridFormation !== "indefinido") {
 	     detectedFormation = hybridFormation;
 	     console.log("🧠 Formação detectada via IA HÍBRIDA (ELO + terços + GK):", hybridFormation);
@@ -913,19 +917,21 @@ app.post("/ai/vision-tactic", async (req, res) => {
   if (Array.isArray(black) && black.length >= 4) {
    console.log("📌 Coordenadas do adversário recebidas — pulando visão.");
 
-   // Detecta elo: zaga, meio, ataque
-   const roles = detectEloFormation(black);  
-
-   // Interpreta a formação tática real
-   const formation = interpretFormation(roles);
+   // As coordenadas chegam no referencial horizontal usado pelo backend.
+   // O detector avançado remove o goleiro antes de contar a linha defensiva
+   // e combina linhas, terços e o template das formações cadastradas.
+   const formation = detectOpponentFormationAdvanced(black);
 
    return res.json({
      opponentFormation: formation,
      detectedFormation: formation,
      playersDetected: black.length,
      ballDetected: !!ball,
-     coachComment: `Formação detectada: ${formation} (via ELO + terços)`,
-     green: await generateResponseForGreen(formation) // sua lógica
+     coachComment: `Formação detectada: ${formation} (linhas, terços e template)`,
+     // buildGreenFromFormation é a função disponível para montar o time verde.
+     // Ela retorna { greenAI }, enquanto a resposta da API espera o array em
+     // `green`.
+     green: buildGreenFromFormation(formation, ball, "defesa").greenAI
    });
  }
 
@@ -970,7 +976,7 @@ app.post("/ai/vision-tactic", async (req, res) => {
      playersDetected: players.length,
      ballDetected,
      coachComment: `Formação detectada via ELO: ${eloFormation}`,
-     green: await generateResponseForGreen(eloFormation)
+     green: buildGreenFromFormation(eloFormation, ball, "defesa").greenAI
    });
  }
  console.log("⚠️ ELO não fechou formação — deixando fallback continuar…");

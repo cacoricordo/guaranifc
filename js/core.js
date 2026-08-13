@@ -1,5 +1,3 @@
-/* ===== CORE de aprimoramento esportivo: movimento, socket, física e AI analyze ===== */
-
 // === Utilitário: throttle ===
 function throttle(fn, delay) {
   let last = 0;
@@ -14,6 +12,9 @@ function throttle(fn, delay) {
 
 // === DIMENSÃO DO CAMPO (pegando pelo elemento #field ou fallback para viewport) ===
 const field = document.getElementById("field") || document.body;
+const AI_API_BASE = ["localhost", "127.0.0.1"].includes(location.hostname)
+  ? location.origin
+  : "https://guaranifc.onrender.com";
 window.FIELD_WIDTH  = field.clientWidth  || window.innerWidth;
 window.FIELD_HEIGHT = field.clientHeight || window.innerHeight;
 const FIELD_RIGHT_GOAL_X = FIELD_WIDTH - 20; // ajuste conforme seu campo
@@ -27,47 +28,112 @@ function isGoalRight(ballEl) {
   const ball = ballEl.getBoundingClientRect();
   const goal = goalEl.getBoundingClientRect();
 
-  const passedLine = ball.right >= goal.left;                // passou da linha do gol
-  const withinPosts = ball.top >= goal.top && ball.bottom <= goal.bottom; // entre as traves
+  const overlapsX = ball.left <= goal.right && ball.right >= goal.left;
+  const overlapsY = ball.top <= goal.bottom && ball.bottom >= goal.top;
 
-  return passedLine && withinPosts;
+  return overlapsX && overlapsY;
 }
 
 const circles = {};
 const dragState = {};
 let activeId = null;
-const circleOriginalNumber = {};
-const circleTacticalState = {};
 
 let movedDuringDrag = false;
+
+const dragCardMetric = {
+  count: 0,
+  firstTs: 0,
+  secondTs: 0,
+  ids: [],
+  timeoutId: null
+};
+
+function resetDragCardMetric() {
+  if (dragCardMetric.timeoutId) {
+    clearTimeout(dragCardMetric.timeoutId);
+    dragCardMetric.timeoutId = null;
+  }
+  dragCardMetric.count = 0;
+  dragCardMetric.firstTs = 0;
+  dragCardMetric.secondTs = 0;
+  dragCardMetric.ids = [];
+}
+
+function awardCurrentMissionCard() {
+  const mission = window.currentMissionCard;
+  if (!mission || !mission.id) return;
+  if (typeof window.addCardToNFTList === "function") {
+    window.addCardToNFTList(mission.id);
+  }
+  if (typeof window.showVictoryOverlay === "function") {
+    window.showVictoryOverlay(`Card ${mission.id} conquistado!`, mission.id);
+  }
+}
+
+function scheduleMetricTimeout(ms) {
+  if (dragCardMetric.timeoutId) clearTimeout(dragCardMetric.timeoutId);
+  dragCardMetric.timeoutId = setTimeout(() => {
+    resetDragCardMetric();
+  }, ms);
+}
+
+function registerCircleDragMetric(circleId) {
+  if (!window.currentMissionCard) return;
+  const now = Date.now();
+
+  if (dragCardMetric.count === 0) {
+    dragCardMetric.count = 1;
+    dragCardMetric.firstTs = now;
+    dragCardMetric.ids = [circleId];
+    scheduleMetricTimeout(2500);
+    return;
+  }
+
+  if (dragCardMetric.count === 1) {
+    if (dragCardMetric.ids.includes(circleId)) {
+      resetDragCardMetric();
+      dragCardMetric.count = 1;
+      dragCardMetric.firstTs = now;
+      dragCardMetric.ids = [circleId];
+      scheduleMetricTimeout(2500);
+    } else if (now - dragCardMetric.firstTs <= 2500) {
+      dragCardMetric.count = 2;
+      dragCardMetric.secondTs = now;
+      dragCardMetric.ids = [dragCardMetric.ids[0], circleId];
+      scheduleMetricTimeout(3000);
+    } else {
+      resetDragCardMetric();
+      dragCardMetric.count = 1;
+      dragCardMetric.firstTs = now;
+      dragCardMetric.ids = [circleId];
+      scheduleMetricTimeout(2500);
+    }
+    return;
+  }
+
+  if (dragCardMetric.count === 2) {
+    if (dragCardMetric.ids.includes(circleId)) {
+      resetDragCardMetric();
+      dragCardMetric.count = 1;
+      dragCardMetric.firstTs = now;
+      dragCardMetric.ids = [circleId];
+      scheduleMetricTimeout(2500);
+    } else if (now - dragCardMetric.secondTs <= 3000) {
+      awardCurrentMissionCard();
+      resetDragCardMetric();
+    } else {
+      resetDragCardMetric();
+      dragCardMetric.count = 1;
+      dragCardMetric.firstTs = now;
+      dragCardMetric.ids = [circleId];
+      scheduleMetricTimeout(2500);
+    }
+  }
+}
 
 window.trainingBallLock = false;
 window.trainingPlayMode = false;
 window.trainingForceShot = false;
-
-function getDragOffsets(el, clientX, clientY) {
-  const rect = el.getBoundingClientRect();
-  return {
-    offsetX: clientX - rect.left,
-    offsetY: clientY - rect.top
-  };
-}
-
-function startDrag(circleId, event, point = event) {
-  const el = circles[circleId];
-  if (!el) return;
-  if (circleId === 24 && window.trainingBallLock) return;
-
-  const { offsetX, offsetY } = getDragOffsets(el, point.clientX, point.clientY);
-  dragState[circleId].dragging = true;
-  dragState[circleId].offsetX = offsetX;
-  dragState[circleId].offsetY = offsetY;
-  activeId = circleId;
-  movedDuringDrag = false;
-  event.preventDefault?.();
-}
-
-window.startDrag = startDrag;
 
 // === Inicializa círculos (jogadores) ===
 for (let i = 1; i <= 24; i++) {
@@ -75,17 +141,43 @@ for (let i = 1; i <= 24; i++) {
   circles[i] = el;
   dragState[i] = { dragging: false, offsetX: 0, offsetY: 0 };
   if (!el) continue;
-
+  const id = i;
   el.style.position = el.style.position || "absolute";
   el.style.zIndex = "20";
-  circleOriginalNumber[i] = el.textContent.trim() || "";
 
-  el.addEventListener("mousedown", (e) => startDrag(i, e));
+  el.addEventListener("mousedown", (e) => {
+    if (i === 24 && window.trainingBallLock) return;
+    dragState[id].dragging = true;
+    dragState[id].offsetX = e.offsetX;
+    dragState[id].offsetY = e.offsetY;
+    activeId = id;
+    registerCircleDragMetric(id);
+  });
+
   el.addEventListener("touchstart", (e) => {
+    if (i === 24 && window.trainingBallLock) return;
     const touch = e.touches[0];
-    if (!touch) return;
-    startDrag(i, e, touch);
+    const rect = el.getBoundingClientRect();
+    dragState[i].dragging = true;
+    dragState[i].offsetX = touch.clientX - rect.left;
+    dragState[i].offsetY = touch.clientY - rect.top;
+    activeId = i;
+    registerCircleDragMetric(i);
+    e.preventDefault();
   }, { passive: false });
+}
+
+// === NOVO: Estado tático por jogador (D / M / A / número) ===
+const circleTacticalState = {};
+const circleOriginalNumber = {};
+
+// === Inicializa labels originais ===
+for (let i = 1; i <= 24; i++) {
+  const el = document.getElementById("circle" + i);
+  if (!el) continue;
+
+// guarda o número original do círculo
+  circleOriginalNumber[i] = el.textContent.trim() || "";
 }
 
 // === Ciclo de clique: Número → D → M → A → Número ===
@@ -157,21 +249,78 @@ function checkCollision(player, ball) {
 let lastSpoken = {}; // cooldown das falas
 let ballVelocity = { x: 0, y: 0 }; // vetor de velocidade da bola
 let ballMoving = false;
+let lastBallTouch = { time: null, by: null };
+let autoShotPending = false;
+let autoShotTimeout = null;
+let lastAutoShotTs = 0;
+
+function getElementCenter(el) {
+  const r = el.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+
+function distanceBetweenCenters(a, b) {
+  if (!a || !b) return Infinity;
+  const ca = getElementCenter(a);
+  const cb = getElementCenter(b);
+  const dx = ca.x - cb.x;
+  const dy = ca.y - cb.y;
+  return Math.hypot(dx, dy);
+}
+
+function getGoalCenter(goalId) {
+  const goal = document.getElementById(goalId);
+  const fieldRect = document.getElementById("background-square")?.getBoundingClientRect();
+  const gr = goal?.getBoundingClientRect();
+  if (!goal || !gr) return null;
+  return {
+    x: fieldRect ? gr.left - fieldRect.left + gr.width / 2 : parseFloat(goal.style.left) + (goal.offsetWidth || 0) / 2,
+    y: fieldRect ? gr.top - fieldRect.top + gr.height / 2 : parseFloat(goal.style.top) + (goal.offsetHeight || 0) / 2
+  };
+}
+
+// Posição inicial do goleiro do Guarani (circle23)
+const gkGuarani = document.getElementById("circle23");
+if (gkGuarani) {
+  gkGuarani.style.left = "181px";
+  gkGuarani.style.top = "15px";
+  gkGuarani.style.setProperty("left", "181px", "important");
+  gkGuarani.style.setProperty("top", "15px", "important");
+}
+
+// watchdog simples: mantém o GK no lugar esperado
+setInterval(() => {
+  const gk = document.getElementById("circle23");
+  if (!gk) return;
+  const left = parseFloat(gk.style.left) || 0;
+  const top = parseFloat(gk.style.top) || 0;
+  if (Math.abs(left - 181) > 5 || Math.abs(top - 15) > 5) {
+    gk.style.left = "181px";
+    gk.style.top = "15px";
+    gk.style.setProperty("left", "181px", "important");
+    gk.style.setProperty("top", "15px", "important");
+  }
+}, 400);
 
 // === Função de movimento e impacto ===
 function moveElement(id, x, y) {
   const el = circles[id];
   if (!el) return;
 
-  // 🟥 impede o juiz (circle12) de movimentar a bola ou ter impacto
-  if (id === 12) return;
+  // Ajuste do goleiro do Guarani (circle23): segue a linha X da bola e fica na pequena área superior
+  let targetX = x;
+  let targetY = y;
+  if (id === 23) {
+    targetX = 181;
+    targetY = 15;
+  }
 
   // 🟢 permite o movimento da bola localmente
   const oldX = parseFloat(el.style.left || 0);
   const oldY = parseFloat(el.style.top || 0);
 
-  el.style.left = x + "px";
-  el.style.top = y + "px";
+  el.style.left = targetX + "px";
+  el.style.top = targetY + "px";
 
   // Se for a bola, apenas emite o movimento e sai (sem colisão)
 if (id === 24) {
@@ -188,6 +337,7 @@ if (id === 24) {
   // detecta colisão jogador-bola
   if (checkCollision(el, ball)) {
     const now = Date.now();
+    lastBallTouch = { time: now, by: id };
 
     // fala uma vez por segundo
     if (!lastSpoken[id] || now - lastSpoken[id] > 1000) {
@@ -198,13 +348,13 @@ if (id === 24) {
     // === Cálculo do impacto proporcional à velocidade ===
     const vx = (x - oldX) * 0.6; // força (ajuste: 0.6–1.0)
     const vy = (y - oldY) * 0.6;
-    
+
    // 🟩 AUTO-CHUTE DA IA (time verde)
    if (window.trainingForceShot && id >= 13 && id <= 23) {
        aiAutoKickTowardsLeftGoal(el);
        return;
    }
-    
+
     ballVelocity.x = vx;
     ballVelocity.y = vy;
     ballMoving = true;
@@ -233,6 +383,7 @@ function updateBallPhysics() {
   // se a velocidade for muito baixa, para a bola
   if (Math.abs(ballVelocity.x) < 0.05 && Math.abs(ballVelocity.y) < 0.05) {
     ballMoving = false;
+    autoShotPending = false;
   }
 
   // mantém dentro do campo (limites de tela)
@@ -255,8 +406,24 @@ function updateBallPhysics() {
       new CustomEvent("goal:scored", { detail: { side: "right" } })
     );
 
+    awardCurrentMissionCard();
     ballMoving = false; // para a bola após o gol
+    autoShotPending = false;
     return;            // evita disparar múltiplos gols no mesmo lance
+  }
+
+  // 🔄 AUTO-CHUTE: se a bola chega perto de um jogador branco, ele finaliza
+  if (ballMoving && Date.now() - lastAutoShotTs > 600) {
+    for (let i = 1; i <= 11; i++) {
+      const p = document.getElementById("circle" + i);
+      if (!p) continue;
+      const dist = distanceBetweenCenters(ball, p);
+      if (dist < 26) { // contato/passe
+        triggerAutoShot();
+        lastAutoShotTs = Date.now();
+        break;
+      }
+    }
   }
 
   // envia posição ao servidor
@@ -265,6 +432,159 @@ function updateBallPhysics() {
 
 // === Atualiza a física a cada frame ===
 setInterval(updateBallPhysics, 30);
+
+// ✅ Chute forçado ao gol direito (gol2-square) — usado após colisão + clique no aiBtn
+window.kickBallToRightGoal = function kickBallToRightGoal() {
+  const ball = document.getElementById("circle24");
+  const goal = document.getElementById("gol2-square");
+  if (!ball || !goal) return;
+
+  const ballCenter = getElementCenter(ball);
+  const goalCenter = getElementCenter(goal);
+
+  const dx = goalCenter.x - ballCenter.x;
+  const dy = goalCenter.y - ballCenter.y;
+  const dist = Math.max(1, Math.hypot(dx, dy));
+
+  // velocidade proporcional, suficientemente forte para alcançar o gol
+  const speed = Math.min(24, dist * 0.35);
+  ballVelocity.x = (dx / dist) * speed;
+  ballVelocity.y = (dy / dist) * speed;
+  ballMoving = true;
+};
+
+function strongGreenShot() {
+  const ball = document.getElementById("circle24");
+  const goal = document.getElementById("gol2-square");
+  if (!ball || !goal) return;
+  let attacker = null;
+  let bestDist = Infinity;
+  for (let i = 13; i <= 22; i++) {
+    const el = document.getElementById("circle" + i);
+    if (!el) continue;
+    const d = distanceBetweenCenters(ball, el);
+    if (d < bestDist) {
+      bestDist = d;
+      attacker = el;
+    }
+  }
+  const ballCenter = getElementCenter(ball);
+  const goalCenter = getElementCenter(goal);
+  const dx = goalCenter.x - ballCenter.x;
+  const dy = goalCenter.y - ballCenter.y;
+  const dist = Math.max(1, Math.hypot(dx, dy));
+  const speed = Math.min(30, dist * 0.45);
+  ballVelocity.x = (dx / dist) * speed;
+  ballVelocity.y = (dy / dist) * speed;
+  ballMoving = true;
+}
+
+function triggerAutoShot() {
+  kickBallToRightGoal();
+  autoShotPending = true;
+  clearTimeout(autoShotTimeout);
+  autoShotTimeout = setTimeout(() => {
+    if (autoShotPending) {
+      strongGreenShot();
+      autoShotPending = false;
+    }
+  }, 1600);
+}
+
+// ===== AUTO CHUTE/PASSE APÓS AI BTN =====
+function shootWithEchoes(goalId, speedBase = 20) {
+  const ball = document.getElementById("circle24");
+  const goalCenter = getGoalCenter(goalId);
+  if (!ball || !goalCenter) return;
+
+  const ballCenter = getElementCenter(ball);
+  const dx = goalCenter.x - ballCenter.x;
+  const dy = goalCenter.y - ballCenter.y;
+  const dist = Math.max(1, Math.hypot(dx, dy));
+  const speeds = [speedBase, speedBase * 0.75, speedBase * 0.55];
+
+  speeds.forEach((sp, idx) => {
+    setTimeout(() => {
+      ballVelocity.x = (dx / dist) * sp;
+      ballVelocity.y = (dy / dist) * sp;
+      ballMoving = true;
+    }, idx * 350);
+  });
+}
+
+function autoPossessionShoot() {
+  const ball = document.getElementById("circle24");
+  if (!ball) return;
+  const lastId = lastBallTouch?.by ? Number(lastBallTouch.by) : null;
+
+  const picker = () => {
+    // fallback: pega o jogador mais próximo
+    let best = null;
+    let bestDist = Infinity;
+    for (let i = 1; i <= 22; i++) {
+      const el = document.getElementById("circle" + i);
+      if (!el) continue;
+      const d = distanceBetweenCenters(ball, el);
+      if (d < bestDist) { bestDist = d; best = i; }
+    }
+    return best;
+  };
+
+  const ownerId = lastId || picker();
+  if (!ownerId) return;
+  const isGreen = ownerId >= 13;
+  const goalId = isGreen ? "gol-square" : "gol2-square";
+  const speed = isGreen ? 18 : 22;
+  shootWithEchoes(goalId, speed);
+}
+window.autoPossessionShoot = autoPossessionShoot;
+
+window.passBallToTarget = function passBallToTarget(targetEl) {
+  const ball = document.getElementById("circle24");
+  if (!ball || !targetEl) return;
+  const ballCenter = getElementCenter(ball);
+  const targetCenter = getElementCenter(targetEl);
+
+  const dx = targetCenter.x - ballCenter.x;
+  const dy = targetCenter.y - ballCenter.y;
+  const dist = Math.max(1, Math.hypot(dx, dy));
+  const speed = Math.min(18, dist * 0.25);
+  ballVelocity.x = (dx / dist) * speed;
+  ballVelocity.y = (dy / dist) * speed;
+  ballMoving = true;
+};
+
+window.chooseForwardTeammate = function chooseForwardTeammate(excludeId = null) {
+  const ball = document.getElementById("circle24");
+  if (!ball) return null;
+  const ballCenter = getElementCenter(ball);
+  let best = null;
+  let bestDelta = 0;
+
+  // time branco: círculos 1 a 11
+  for (let i = 1; i <= 11; i++) {
+    if (excludeId && String(excludeId) === String(i)) continue;
+    const el = document.getElementById("circle" + i);
+    if (!el) continue;
+    const c = getElementCenter(el);
+    // Campo orientado para o topo: quem está mais à frente tem Y menor
+    const deltaY = ballCenter.y - c.y;
+    if (deltaY > bestDelta) {
+      bestDelta = deltaY;
+      best = el;
+    }
+  }
+  return best;
+};
+
+window.wasRecentBallTouch = function wasRecentBallTouch(ms = 2000) {
+  if (!lastBallTouch.time) return false;
+  return Date.now() - lastBallTouch.time <= ms;
+};
+
+window.consumeLastBallTouch = function consumeLastBallTouch() {
+  lastBallTouch = { time: null, by: null };
+};
 
 // === Movimento dos jogadores (desktop + touch) ===
 const emitPlayerMove = throttle((id, left, top, room) => {
@@ -316,18 +636,18 @@ document.addEventListener("touchend", endDrag);
 const canvas = document.getElementById("trace-canvas");
 const ctx = canvas?.getContext("2d", { willReadFrequently: true });
 
-// =========================================================
-// ⚫ PEGAR POSIÇÕES DO TIME ADVERSÁRIO NO CAMPO ⚫
-// =========================================================
+// ============================================================
+// ⚫ PEGAR POSIÇÕES DO TIME ADVERSÁRIO/TIME DE TREINO CAMPO ⚫
+// ============================================================
 function getOpponentPositions() {
-  // detecta automaticamente se existe circleOpp1
-  // ou usa circle1 a circle11 como ADVERSÁRIO!
+  // O adversário/card branco é formado por circle2..circle11. circle1 é o GK
+  // e fica fora da leitura de formação.
   const black = [];
-  for (let i = 1; i <= 11; i++) {
+  for (let i = 2; i <= 11; i++) {
     let el = document.getElementById("circleOpp" + i);
     if (!el) el = document.getElementById("circle" + i); // fallback automático
     if (!el) continue;
-    
+
     // pega estilos COMPUTADOS (o que realmente aparece na tela)
     const comp = window.getComputedStyle(el);
     const left = parseFloat(comp.left);
@@ -410,7 +730,7 @@ if (typeof window !== "undefined") {
 
      // força inicial do chute → direção esquerda
 	 aiAutoKickTowardsLeftGoal();
-	 
+
 	 // após a bola ser chutada
 	 setTimeout(() => {
      window.trainingForceShot = false;
@@ -419,6 +739,8 @@ if (typeof window !== "undefined") {
 
 function aiAutoKickTowardsLeftGoal(playerEl) {
     const ball = document.getElementById("circle24");
+    if (!ball) return;
+
     const bx = parseFloat(ball.style.left);
     const by = parseFloat(ball.style.top);
 
@@ -427,37 +749,30 @@ function aiAutoKickTowardsLeftGoal(playerEl) {
         console.warn("⚠️ gol-square não encontrado, chute cancelado.");
         return;
     }
+
+    const fieldRect = document.getElementById("background-square")?.getBoundingClientRect();
     const gr = goal.getBoundingClientRect();
-    const br = ball.getBoundingClientRect();
 
-    // centro do gol
-    const goalY = gr.top + (gr.height / 2);
+    // centro do gol em coordenadas do campo
+    const targetX = fieldRect ? gr.left - fieldRect.left + gr.width / 2 : parseFloat(goal.style.left) + (goal.offsetWidth || 0) / 2;
+    const targetY = fieldRect ? gr.top - fieldRect.top + gr.height / 2 : parseFloat(goal.style.top) + (goal.offsetHeight || 0) / 2;
 
-// 💥 VELOCIDADE MONSTRA (POMBO SEM ASA)
-   const dx = -18;    // muito mais força na horizontal
-   const dy = (goalY - br.top) * 0.09; // correção vertical mais agressiva
+    const vecX = targetX - bx;
+    const vecY = targetY - by;
+    const len = Math.hypot(vecX, vecY) || 1;
 
-   // 🌀 EFEITO DE ROTAÇÃO (rosca / trivela)
-   // cria leve curvatura na bola conforme ela chega perto do gol
-   let spin = (Math.random() * 2 - 1) * 0.6;   // rotação leve aleatória
-   ball.style.transition = "transform 0.15s linear";
-   ball.style.transform = `rotate(${spin}rad)`;  // faz a bola girar
+    const speed = 12;
+    ballVelocity.x = (vecX / len) * speed;
+    ballVelocity.y = (vecY / len) * speed;
 
-   // leva essa rotação para o deslocamento físico
-   const curve = (Math.random() * 2 - 1) * 0.8;
-   ballVelocity.x = dx + curve;     // desvia durante a viagem
-   ballVelocity.y = dy + curve * 0.4;  // chance de fazer “subir e cair”
-
-   // 🪄 ANIMAÇÃO NO AR — sobe um pouco e cai fortemente
-   ball.style.transition = "all 0.08s linear";
-   ball.style.top = (by - 12) + "px";     // pequena subida
-   setTimeout(() => {                     // e queda!
-     ball.style.top = (by + 18) + "px";
-    }, 150);
+    // leve rotação para efeito visual
+    const spin = (Math.random() * 2 - 1) * 0.6;
+    ball.style.transition = "transform 0.15s linear";
+    ball.style.transform = `rotate(${spin}rad)`;
 
     ballMoving = true;
 }
-   
+
 function animateTeam(prefix, positions, onComplete, phase = "defesa") {
   const fieldRect = document.getElementById("background-square").getBoundingClientRect();
 
@@ -489,15 +804,71 @@ function animateTeam(prefix, positions, onComplete, phase = "defesa") {
   }, speed);
 }
 
+// Rotação de 90° anti-horária do referencial original (600 × 300) para o
+// campo vertical. Assim o Guarani defende no topo e ataca de cima para baixo.
+function orientFormationTopBottom(formation, canvasRect) {
+  const canvas = document.getElementById("trace-canvas");
+  const rect = canvasRect || canvas?.getBoundingClientRect();
+  const fw = rect?.width || canvas?.width || 300;
+  const fh = rect?.height || canvas?.height || 600;
+  const originX = rect?.left || 0;
+  const originY = rect?.top || 0;
+  const playerSize = 26;
+  const margin = playerSize / 2;
+  const baseW = 600;
+  const baseH = 300;
+
+  return (formation || []).map(player => {
+    const [origX, origY] = player.prefferedZone || [0, 0];
+
+    // (x, y) horizontal -> (y, largura - x) vertical: rotação anti-horária.
+    // A linha defensiva original (x alto) fica no topo; o ataque, no fundo.
+    const depthNorm = origX / baseW;
+    const projectedTop = fh - (depthNorm * fh);
+
+    // Lateralidade continua no eixo X, normalizada pelo height base.
+    const lateralNorm = origY / baseH;
+    const projectedLeft = lateralNorm * fw;
+
+    // Os círculos são posicionados em coordenadas da página; por isso soma-se
+    // a origem do canvas e mantém-se todo o diâmetro dentro dele.
+    const clampedLeft = originX + Math.max(margin, Math.min(fw - playerSize, projectedLeft));
+    const clampedTop  = originY + Math.max(margin, Math.min(fh - playerSize, projectedTop));
+
+    return { ...player, prefferedZone: [clampedLeft, clampedTop] };
+  });
+}
+
+// Respostas da IA ainda usam as coordenadas do campo horizontal 600 × 300.
+// Esta é a mesma rotação aplicada às formações, agora para posições {left, top}.
+function orientBackendFormationTopBottom(players, canvasEl = document.getElementById("trace-canvas")) {
+  const rect = canvasEl?.getBoundingClientRect();
+  const width = rect?.width || canvasEl?.width || 300;
+  const height = rect?.height || canvasEl?.height || 600;
+  const originX = rect?.left || 0;
+  const originY = rect?.top || 0;
+
+  return (players || []).map(player => ({
+    ...player,
+    left: originX + (player.top / 300) * width,
+    top: originY + (1 - (player.left / 600)) * height
+  }));
+}
+
 
 /**
  * Anima a transição entre duas formações (ex: 4-4-2 → 4-3-3)
  * usando uma curva Sheen & Ghain (ش غ).
  */
 function animateFormationTransition(prefix, fromFormation, toFormation, phase = "transicao", mode = "match") {
-  const field = document.getElementById("background-square");
-  const rect = field.getBoundingClientRect();
-  
+  const canvas = document.getElementById("trace-canvas");
+  const rect = canvas?.getBoundingClientRect();
+  if (!rect) return;
+
+  // Reorienta as zonas para a lógica topo→base (Guarani defendendo topo).
+  const fromOriented = orientFormationTopBottom(fromFormation, rect);
+  const toOriented = orientFormationTopBottom(toFormation, rect);
+
  const currentPos = {};
  document.querySelectorAll(`.${prefix}`).forEach(el => {
    const id = parseInt(el.id.replace(prefix, ""));
@@ -528,12 +899,12 @@ function animateFormationTransition(prefix, fromFormation, toFormation, phase = 
     }
 
     // Interpola cada jogador entre as formações
-    for (let i = 0; i < toFormation.length; i++) {
-      const player = toFormation[i];
+    for (let i = 0; i < toOriented.length; i++) {
+      const player = toOriented[i];
       const el = document.getElementById(prefix + player.id);
       if (!el) continue;
 
-      const from = fromFormation.find(f => f.id === player.id);
+      const from = fromOriented.find(f => f.id === player.id);
       if (!from) continue;
 
       const progress = frame / totalFrames;
@@ -546,7 +917,7 @@ function animateFormationTransition(prefix, fromFormation, toFormation, phase = 
 
       // Recentrar o time (Carlos Alberto Silva Style)
       const centerOffsetX = 0; // fieldCenterX - 300; // 600/2 - referência base
-	
+
 	  moveElement(player.id, (lerpX + point.x / 10 + offsetX), (lerpY + point.y / 10 + offsetY));
 
     }
@@ -561,24 +932,28 @@ window.animateFormationTransition = animateFormationTransition;
 
 // === 🟢 BLOCO TÁTICO DINÂMICO (MOVE O TIME TODO) ===
 function applyDynamicBlocks(greenPlayers, phase, opponentFormation) {
-  let blockOffsetX = 0;
+  // No campo vertical o avanço/recuo é sempre feito pelo eixo Y.
+  // Guarani: defende em cima e ataca embaixo.
+  let blockOffsetY = 0;
   switch ((phase || "").toLowerCase()) {
-    case "ataque":    blockOffsetX = -80; break;
-    case "defesa":    blockOffsetX =  80; break;
-    case "transicao": blockOffsetX = -40; break;
+    case "ataque":    blockOffsetY =  80; break;
+    case "defesa":    blockOffsetY = -80; break;
+    case "transicao": blockOffsetY =  40; break;
   }
-  if (opponentFormation === "4-4-2" || opponentFormation === "5-4-1") blockOffsetX = -100;
-  else if (opponentFormation === "4-3-3" || opponentFormation === "4-2-3-1") blockOffsetX = 100;
+  if (opponentFormation === "4-4-2" || opponentFormation === "5-4-1") blockOffsetY = 100;
+  else if (opponentFormation === "4-3-3" || opponentFormation === "4-2-3-1") blockOffsetY = -100;
 
-  console.log(`🟢 Bloco aplicado: fase=${phase}, offset=${blockOffsetX}px`);
+  console.log(`🟢 Bloco vertical aplicado: fase=${phase}, offset=${blockOffsetY}px`);
 
   greenPlayers.forEach(p => {
     const el = document.getElementById(`circle${p.id}`);
     if (!el) return;
-    const newX = p.left + blockOffsetX;
-	const fieldRect = document.getElementById("background-square").getBoundingClientRect();
-    moveElement(p.id, p.left, p.top);
-    p.left = Math.max(20, Math.min(580, newX));
+    const fieldRect = document.getElementById("background-square")?.getBoundingClientRect();
+    const minTop = fieldRect?.top ?? 20;
+    const maxTop = (fieldRect?.bottom ?? 570) - el.offsetHeight;
+    const newTop = Math.max(minTop, Math.min(maxTop, p.top + blockOffsetY));
+    moveElement(p.id, p.left, newTop);
+    p.top = newTop;
   });
 }
 
@@ -603,10 +978,20 @@ function getGuaraniPositions() {
 // ======================================================
 // DETECTA ELO TÁTICO NO CAMPO (ZAGA / MEIO / ATAQUE)
 // ======================================================
-function detectEloFormation(players, maxDist = 70) {
+function detectEloFormation(players, maxDist = 60, orientation = "defense-bottom") {
   if (!players || players.length < 4) return null;
 
-  const roles = { zaga: [], meio: [], ataque: [] };
+  // Ignora goleiro: menor top (defendendo topo)
+  let filtered = players || [];
+  let keeper = null;
+  if (filtered.length > 10) {
+    keeper = orientation === "defense-top"
+      ? filtered.reduce((gk, p) => (p.top < gk.top ? p : gk), filtered[0])
+      : filtered.reduce((gk, p) => (p.top > gk.top ? p : gk), filtered[0]);
+    filtered = filtered.filter(p => p !== keeper);
+  }
+
+  const roles = { zaga: [], meio: [], ataque: [], keeper }; // AGORA FOI DECLARADO!
   const clusters = [];
   const visited = new Set();
 
@@ -634,37 +1019,52 @@ function detectEloFormation(players, maxDist = 70) {
     return cluster;
   }
 
-  for (let i = 0; i < players.length; i++) {
+  // 🧊 monta clusters automáticos
+  for (let i = 0; i < filtered.length; i++) {
     if (!visited.has(i)) {
       const cluster = bfsCluster(i);
       if (cluster.length >= 2) clusters.push(cluster);
     }
   }
 
-  const FIELD_WIDTH = 600;
-  const DEF_LIMIT = FIELD_WIDTH * (2 / 8);
-  const MID_LIMIT = FIELD_WIDTH * (5 / 8);
+// 📌 Coordenadas do campo (frações reais: 2/8 e 5/8)
+const fieldEl = document.getElementById("background-square");
+const FIELD_HEIGHT = fieldEl?.clientHeight || window.innerHeight || 300;
+const DEF_LIMIT = FIELD_HEIGHT * (2/8);   // 75px
+const MID_LIMIT = FIELD_HEIGHT * (5/8);   // 187.5px
 
-  clusters.forEach(cluster => {
-    const avgX = cluster.reduce((s, p) => s + p.left, 0) / cluster.length;
-    if (avgX < DEF_LIMIT) roles.zaga.push(...cluster);
-    else if (avgX < MID_LIMIT) roles.meio.push(...cluster);
-    else roles.ataque.push(...cluster);
-  });
+clusters.forEach(cluster => {
+  const avgY = cluster.reduce((s, p) => s + p.top, 0) / cluster.length;
 
-  if (!roles.zaga.length || !roles.meio.length || !roles.ataque.length) {
-    players.forEach(player => {
-      if (player.left < DEF_LIMIT) roles.zaga.push(player);
-      else if (player.left < MID_LIMIT) roles.meio.push(player);
-      else roles.ataque.push(player);
-    });
+  // 1️⃣ Primeiro identifica a ZONA
+  let zone = "ATT";
+  const defenseTop = orientation === "defense-top";
+  if (defenseTop) {
+    // Defesa no topo, ataque embaixo
+    if (avgY < DEF_LIMIT)      zone = "DEF";
+    else if (avgY < MID_LIMIT) zone = "MID";
+    else zone = "ATT";
+  } else {
+    // Defesa embaixo, ataque em cima (padrão)
+    if (avgY < DEF_LIMIT)      zone = "ATT";
+    else if (avgY < MID_LIMIT) zone = "MID";
+    else zone = "DEF";
   }
 
-  return {
-    zaga: Array.from(new Set(roles.zaga)),
-    meio: Array.from(new Set(roles.meio)),
-    ataque: Array.from(new Set(roles.ataque))
-  };
+  // 2️⃣ Depois avalia TAMANHO do cluster
+  if (zone === "DEF") {
+    roles.zaga.push(...cluster);
+  }
+  else if (zone === "MID") {
+    roles.meio.push(...cluster);
+  }
+  else {
+    roles.ataque.push(...cluster);
+  }
+});
+
+
+  return roles;
 }
 
 if (typeof window !== "undefined") {
@@ -675,21 +1075,167 @@ if (typeof window !== "undefined") {
 // =====================================================
 // INTERPRETA A FORMAÇÃO BASEADO NO ELO
 // =====================================================
+function interpretFormation(roles) {
+  const z = roles.zaga?.length || 0;
+  const m = roles.meio?.length || 0;
+  const a = roles.ataque?.length || 0;
 
-  // 1) ANÁLISE POR TERÇOS DO CAMPO – ESTRUTURA BÁSICA
+  // Reconhecimento automático de padrões profissionais
+  if (z === 4 && m === 3 && a === 3) return "4-3-3";
+  if (z === 4 && m === 2 && a === 4) return "4-1-4-1";
+  if (z === 4 && m === 4 && a === 2) return "4-4-2";
+  if (z === 4 && m === 3 && a === 2) return "4-1-3-2";  // sua formação atual!
+  if (z === 3 && m === 5 && a === 2) return "3-5-2";
+  if (z === 5 && m === 3 && a === 2) return "5-3-2";
+
+  // Fallback moderno (não fica preso em 4-4-2)
+  return `${z}-${m}-${a}`;
+}
+
+if (typeof window !== "undefined") {
+  window.interpretFormation = interpretFormation;
+}
+
+// ==============================================================
+// 1) ANÁLISE POR TERÇOS DO CAMPO – ESTRUTURA BÁSICA
 // ==============================================================
 function analyzeFieldThirds(players) {
-  const FIELD_WIDTH = 600;
+  // Campo orientado VERTICAL — detecta se defesa está embaixo ou em cima
+  const field = document.getElementById("background-square");
+  const FIELD_HEIGHT = field?.clientHeight || window.innerHeight || 300;
 
-  // NOVA DIVISÃO REAL – 2/8, 3/8, 3/8
-  const DEF_LIMIT = FIELD_WIDTH * (2/8);   // 150px
-  const MID_LIMIT = FIELD_WIDTH * (5/8);   // 375px
+  const VALID = [
+    [4, 4, 2], [4, 1, 4, 1], [4, 3, 3], [4, 2, 3, 1], [4, 2, 4],
+    [3, 5, 2], [5, 4, 1], [4, 5, 1], [3, 4, 3], [5, 3, 2]
+  ];
 
-  const def = players.filter(p => p.left < DEF_LIMIT).length;
-  const mid = players.filter(p => p.left >= DEF_LIMIT && p.left < MID_LIMIT).length;
-  const att = players.filter(p => p.left >= MID_LIMIT).length;
+  const scoreShape = (arr) => VALID.reduce((best, v) => {
+    const minLen = Math.min(v.length, arr.length);
+    let diff = 0;
+    for (let i = 0; i < minLen; i++) diff += Math.abs(v[i] - arr[i]);
+    diff += Math.abs(v.length - arr.length) * 2;
+    return Math.min(best, diff);
+  }, Infinity);
 
-  return { def, mid, att, shape: `${def}-${mid}-${att}` };
+  const selectKeeper = (list, orientation) => {
+    if (!list.length) return null;
+    // Defesa embaixo => GK com maior top; defesa em cima => menor top
+    const cmp = orientation === "defense-top"
+      ? (a, b) => a.top < b.top
+      : (a, b) => a.top > b.top;
+    return list.reduce((gk, p) => (cmp(p, gk) ? p : gk), list[0]);
+  };
+
+  const buildShape = (orientation) => {
+    let list = players || [];
+    if (list.length > 10) {
+      const keeper = selectKeeper(list, orientation);
+      list = list.filter(p => p !== keeper);
+    }
+    const DEF_LIMIT = FIELD_HEIGHT * (2 / 8);
+    const MID_LIMIT = FIELD_HEIGHT * (5 / 8);
+
+    let def = 0, mid = 0, att = 0;
+    if (orientation === "defense-top") {
+      def = list.filter(p => p.top < DEF_LIMIT).length;
+      mid = list.filter(p => p.top >= DEF_LIMIT && p.top < MID_LIMIT).length;
+      att = list.filter(p => p.top >= MID_LIMIT).length;
+    } else {
+      // defesa embaixo (padrão)
+      def = list.filter(p => p.top >= MID_LIMIT).length;
+      mid = list.filter(p => p.top >= DEF_LIMIT && p.top < MID_LIMIT).length;
+      att = list.filter(p => p.top < DEF_LIMIT).length;
+    }
+    return { def, mid, att, shape: `${def}-${mid}-${att}`, orientation };
+  };
+
+  const bottomShape = buildShape("defense-bottom");
+  const topShape = buildShape("defense-top");
+
+  const arrBottom = bottomShape.shape.split("-").map(Number);
+  const arrTop = topShape.shape.split("-").map(Number);
+  const scoreBottom = scoreShape(arrBottom);
+  const scoreTop = scoreShape(arrTop);
+
+  return scoreBottom <= scoreTop ? bottomShape : topShape;
+}
+
+// Agrupa linhas pelo eixo Y usando quantis (não depende de limiares fixos)
+function countLinesByQuantiles(players, orientation = "defense-bottom") {
+  let list = players || [];
+  if (list.length === 0) return { def: 0, mid: 0, att: 0, shape: "0-0-0", orientation };
+
+  // remove goleiro
+  if (list.length > 10) {
+    const keeper = orientation === "defense-top"
+      ? list.reduce((gk, p) => (p.top < gk.top ? p : gk), list[0])
+      : list.reduce((gk, p) => (p.top > gk.top ? p : gk), list[0]);
+    list = list.filter(p => p !== keeper);
+  }
+
+  if (list.length === 0) return { def: 0, mid: 0, att: 0, shape: "0-0-0", orientation };
+
+  // ordena por top (menor = mais alto no campo)
+  const sorted = [...list].sort((a, b) => a.top - b.top);
+  const n = sorted.length;
+  const q1Idx = Math.floor(n / 3);
+  const q2Idx = Math.floor((2 * n) / 3);
+
+  const cut1 = (sorted[q1Idx]?.top + (sorted[q1Idx + 1]?.top || sorted[q1Idx]?.top)) / 2 || sorted[q1Idx]?.top || 0;
+  const cut2 = (sorted[q2Idx]?.top + (sorted[q2Idx + 1]?.top || sorted[q2Idx]?.top)) / 2 || sorted[q2Idx]?.top || 0;
+
+  const topBand = list.filter(p => p.top < cut1);
+  const midBand = list.filter(p => p.top >= cut1 && p.top < cut2);
+  const bottomBand = list.filter(p => p.top >= cut2);
+
+  let def = 0, mid = 0, att = 0;
+  if (orientation === "defense-top") {
+    def = topBand.length;
+    mid = midBand.length;
+    att = bottomBand.length;
+  } else {
+    // defesa embaixo (padrão)
+    def = bottomBand.length;
+    mid = midBand.length;
+    att = topBand.length;
+  }
+
+  return { def, mid, att, shape: `${def}-${mid}-${att}`, orientation };
+}
+
+window.countLinesByQuantiles = countLinesByQuantiles;
+
+// Aproxima shape numérico para a formação válida mais próxima
+function snapToValidShape(shapeStr) {
+  const VALID = [
+    "4-4-2", "4-1-4-1", "4-3-3", "4-2-3-1", "4-2-4",
+    "3-5-2", "5-4-1", "4-5-1", "3-4-3", "5-3-2"
+  ];
+  const arr = shapeStr.split("-").map(Number);
+  if (arr.some(isNaN)) return shapeStr;
+
+  const dist = (a, b) => {
+    const aArr = a.split("-").map(Number);
+    const len = Math.max(aArr.length, b.length);
+    let d = 0;
+    for (let i = 0; i < len; i++) {
+      const va = aArr[i] || 0;
+      const vb = b[i] || 0;
+      d += Math.abs(va - vb);
+    }
+    return d;
+  };
+
+  let best = shapeStr;
+  let bestD = Infinity;
+  for (const v of VALID) {
+    const d = dist(v, arr);
+    if (d < bestD) {
+      bestD = d;
+      best = v;
+    }
+  }
+  return best;
 }
 
 
@@ -701,8 +1247,8 @@ window.analyzeFieldThirds = analyzeFieldThirds;
 // ======================================================
 function findGoalkeeper(players) {
   if (!players || players.length === 0) return null;
-  // O mais à esquerda (time branco atacando da esquerda pra direita)
-  return players.reduce((gk, p) => (p.left < gk.left ? p : gk), players[0]);
+  // Defesa no fundo: goleiro é quem está mais abaixo (maior top)
+  return players.reduce((gk, p) => (p.top > gk.top ? p : gk), players[0]);
 }
 
 window.findGoalkeeper = findGoalkeeper;
@@ -710,25 +1256,6 @@ window.findGoalkeeper = findGoalkeeper;
 
 // ==============================================================
 // 2) SISTEMA TÁTICO HÍBRIDO – TERÇO + ELO + VISION
-// ==============================================================
-function interpretFormation(roles) {
-  const z = roles.zaga?.length || 0;
-  const m = roles.meio?.length || 0;
-  const a = roles.ataque?.length || 0;
-
-  if (z === 4 && m === 3 && a === 2) return "4-1-3-2";
-  if (z === 4 && m === 4 && a === 2) return "4-4-2";
-  if (z === 4 && m === 3 && a === 3) return "4-3-3";
-  if (z === 4 && m === 2 && a === 4) return "4-2-4";
-  if (z === 4 && m === 5 && a === 1) return "4-5-1";
-  if (z === 5 && m === 3 && a === 2) return "5-3-2";
-  if (z === 3 && m === 5 && a === 2) return "3-5-2";
-  if (z === 3 && m === 4 && a === 3) return "3-4-3";
-  if (z === 4 && m === 1 && a === 4) return "4-1-4-1";
-  if (z === 4 && m === 2 && a === 3) return "4-2-3-1";
-
-  return `${z}-${m}-${a}`;
-}
 // ==============================================================
 function detectHybridFormation(players) {
   if (window.isTrainingMode) {
@@ -742,12 +1269,18 @@ function detectHybridFormation(players) {
   const playersNoGK = players.filter(p => p !== gk);
   console.log("🧤 Goleiro detectado:", gk);
 
-  // 1️⃣ TERÇOS DO CAMPO – BASE
+  // 1️⃣ TERÇOS DO CAMPO – BASE (com detecção de orientação)
   const thirds = analyzeFieldThirds(playersNoGK);
-  console.log("📊 Terços:", thirds.shape);
+  const thirdsSnap = snapToValidShape(thirds.shape);
+  console.log("📊 Terços:", thirds.shape, "snap:", thirdsSnap, "ori:", thirds.orientation);
+
+  // 1b) Quantis — para linhas reais (evita erro quando limiar fixo falha)
+  const quantLines = countLinesByQuantiles(playersNoGK, thirds.orientation);
+  const quantSnap = snapToValidShape(quantLines.shape);
+  console.log("📊 Linhas (quantis):", quantLines.shape, "snap:", quantSnap, "ori:", quantLines.orientation);
 
   // 2️⃣ ELO – SE TIVER, USA COMO VOTO (NÃO MAIS PRIORIDADE)
-  const roles = detectEloFormation(playersNoGK);
+  const roles = detectEloFormation(playersNoGK, 60, thirds.orientation);
   let eloFormation = null;
   if (roles && Object.values(roles).some(arr => arr.length > 0)) {
     eloFormation = interpretFormation(roles);
@@ -771,7 +1304,10 @@ function detectHybridFormation(players) {
   };
 
   // 👍 TERÇOS — peso 2
-  addVote(thirds.shape, 2);
+  addVote(thirdsSnap, 2);
+
+  // 👍 Quantis — peso 2
+  addVote(quantSnap, 2);
 
   // 👍 VISION — peso 2
   addVote(window.lastVisionFormation, 2);
@@ -786,6 +1322,9 @@ function detectHybridFormation(players) {
     .sort((a, b) => votes[b] - votes[a])[0] || "4-4-2";
 
   console.log("🏆 Formação escolhida por votação:", bestFormation);
+  if (typeof window !== "undefined") {
+    window.lastVotedFormation = bestFormation;
+  }
 
   return bestFormation;  // <-- AGORA É O ÚNICO return!!!
 }
@@ -796,8 +1335,13 @@ window.detectHybridFormation = detectHybridFormation;
 function clearDebugVisual() {
   document.querySelectorAll(".debug-marker, .debug-line").forEach(el => el.remove());
   console.log("🧽 Debug visual LIMPO!");
+  if (debugCleanupTimer) {
+    clearTimeout(debugCleanupTimer);
+    debugCleanupTimer = null;
+  }
 }
 
+let debugCleanupTimer = null;
 // ============================================================
 // DEBUG VISUAL – sem quebrar drag – compatível com ELO
 // ============================================================
@@ -808,51 +1352,93 @@ function debugVisual(players) {
   // Remove debug anterior
   document.querySelectorAll(".debug-marker, .debug-line").forEach(el => el.remove());
 
-  const FIELD_WIDTH = field.clientWidth || 600;
-  const FIELD_HEIGHT = field.clientHeight || 300;
+  // Remove goleiro (mais alto) para não contaminar setores/elos
+  let list = players || [];
+  if (list.length > 10) {
+    const keeper = list.reduce((gk, p) => (p.top > gk.top ? p : gk), list[0]); // defesa embaixo
+    list = list.filter(p => p !== keeper);
+  }
 
-  // 🧠 NOVA DIVISÃO DO CAMPO — 2/8 - 3/8 - 3/8
-  const DEF_LIMIT = FIELD_WIDTH * (2/8);  // 150px
-  const MID_LIMIT = FIELD_WIDTH * (5/8);  // 375px
+  const FIELD_WIDTH = field.clientWidth || 300;
+  const FIELD_HEIGHT = field.clientHeight || 600;
+
+  // 🧠 NOVA DIVISÃO DO CAMPO VERTICAL — 2/8 - 3/8 - 3/8 (top→bottom)
+  const DEF_LIMIT = FIELD_HEIGHT * (2/8);  // 75px
+  const MID_LIMIT = FIELD_HEIGHT * (5/8);  // 187.5px
 
   // === DESENHA AS NOVAS LINHAS AMARELAS ===
-  [DEF_LIMIT, MID_LIMIT].forEach(x => {
+  [DEF_LIMIT, MID_LIMIT].forEach(y => {
     const line = document.createElement("div");
     line.className = "debug-line";
     line.style.position = "absolute";
-    line.style.left = x + "px";
-    line.style.top = "0px";
-    line.style.width = "2px";
-    line.style.height = FIELD_HEIGHT + "px";
+    line.style.left = "0px";
+    line.style.top = y + "px";
+    line.style.width = FIELD_WIDTH + "px";
+    line.style.height = "2px";
     line.style.background = "rgba(255, 255, 0, 0.7)";
     field.appendChild(line);
   });
 
   // === MARCA TODOS OS JOGADORES COM SETOR ===
-  players.forEach(player => {
+  list.forEach(player => {
     const label =
-      player.left < DEF_LIMIT ? "DEF" :
-      player.left < MID_LIMIT ? "MID" :
-      "ATT";
+      player.top < DEF_LIMIT ? "ATQ" :      // topo = ataque
+      player.top < MID_LIMIT ? "MEI" :
+      "DEF";                               // fundo = defesa
 
     createMarker(player, "white", label);
   });
 
   // === LINHA MÉDIA DA ZAGA (Se existir Elo detectado) ===
-  const elo = detectEloFormation(players);
-  if (elo?.zaga && elo.zaga.length >= 2) {
-    const avgY = elo.zaga.reduce((s, p) => s + p.top, 0) / elo.zaga.length;
-    const lineZ = document.createElement("div");
-    lineZ.className = "debug-line";
-    lineZ.style.position = "absolute";
-    lineZ.style.left = "0px";
-    lineZ.style.top = avgY + "px";
-    lineZ.style.width = FIELD_WIDTH + "px";
-    lineZ.style.height = "2px";
-    lineZ.style.background = "rgba(255, 0, 0, 0.6)";
-    field.appendChild(lineZ);
+  const elo = detectEloFormation(list, 45, "defense-bottom");
+  if (elo) {
+    // Zaga
+    if (elo.zaga && elo.zaga.length >= 2) {
+      const avgY = elo.zaga.reduce((s, p) => s + p.top, 0) / elo.zaga.length;
+      const lineZ = document.createElement("div");
+      lineZ.className = "debug-line";
+      lineZ.style.position = "absolute";
+      lineZ.style.left = "0px";
+      lineZ.style.top = avgY + "px";
+      lineZ.style.width = FIELD_WIDTH + "px";
+      lineZ.style.height = "2px";
+      lineZ.style.background = "rgba(255, 0, 0, 0.6)";
+      field.appendChild(lineZ);
 
-    elo.zaga.forEach(p => createMarker(p, "red", "ZAG"));
+      elo.zaga.forEach(p => createMarker(p, "red", "ZAG"));
+    }
+
+    // Meio
+    if (elo.meio && elo.meio.length >= 2) {
+      const avgY = elo.meio.reduce((s, p) => s + p.top, 0) / elo.meio.length;
+      const lineM = document.createElement("div");
+      lineM.className = "debug-line";
+      lineM.style.position = "absolute";
+      lineM.style.left = "0px";
+      lineM.style.top = avgY + "px";
+      lineM.style.width = FIELD_WIDTH + "px";
+      lineM.style.height = "2px";
+      lineM.style.background = "rgba(0, 0, 255, 0.6)";
+      field.appendChild(lineM);
+
+      elo.meio.forEach(p => createMarker(p, "blue", "MEI"));
+    }
+
+    // Ataque
+    if (elo.ataque && elo.ataque.length >= 2) {
+      const avgY = elo.ataque.reduce((s, p) => s + p.top, 0) / elo.ataque.length;
+      const lineA = document.createElement("div");
+      lineA.className = "debug-line";
+      lineA.style.position = "absolute";
+      lineA.style.left = "0px";
+      lineA.style.top = avgY + "px";
+      lineA.style.width = FIELD_WIDTH + "px";
+      lineA.style.height = "2px";
+      lineA.style.background = "rgba(0, 255, 0, 0.6)";
+      field.appendChild(lineA);
+
+      elo.ataque.forEach(p => createMarker(p, "green", "ATQ"));
+    }
   }
 
   // === FUNÇÃO AUXILIAR ===
@@ -872,6 +1458,13 @@ function debugVisual(players) {
     el.innerText = text;
     field.appendChild(el);
   }
+
+  // Auto-limpa debug 6s depois
+  if (debugCleanupTimer) clearTimeout(debugCleanupTimer);
+  debugCleanupTimer = setTimeout(() => {
+    clearDebugVisual();
+    debugCleanupTimer = null;
+  }, 6000);
 }
 
 // Permite usar no console:
@@ -895,7 +1488,7 @@ async function analyzeFormation(config) {
   payload.tacticalRoles = circleTacticalState;
   payload.room = window.currentRoomCode || null;
 
-  const res = await fetch("https://guaranifc.onrender.com/ai/analyze", {
+  const res = await fetch(`${AI_API_BASE}/ai/analyze`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
@@ -910,13 +1503,41 @@ async function analyzeFormation(config) {
 // === Função: envia imagem do campo para análise visual (IA Vision) ===
 async function sendVisionTactic() {
   try {
-    const canvas = document.querySelector("canvas");
+    const canvas = document.getElementById("trace-canvas") || document.querySelector("canvas");
     if (!canvas) {
       console.warn("❌ Canvas não encontrado.");
       return;
     }
 
-    const fieldImage = canvas.toDataURL("image/png");
+    const isVertical = canvas.height > canvas.width; // novo campo em pé
+    let fieldImage = null;
+
+    // Se o canvas está em pé, cria um canvas auxiliar rotacionado (-90º) para o backend
+    // continuar enxergando no layout horizontal antigo.
+    if (isVertical) {
+      const aux = document.createElement("canvas");
+      aux.width = canvas.height;
+      aux.height = canvas.width;
+      const ctxAux = aux.getContext("2d");
+      ctxAux.save();
+      ctxAux.translate(0, aux.height);
+      ctxAux.rotate(-Math.PI / 2);
+      ctxAux.drawImage(canvas, 0, 0);
+      ctxAux.restore();
+      fieldImage = aux.toDataURL("image/png");
+    } else {
+      fieldImage = canvas.toDataURL("image/png");
+    }
+
+    // Branco ataca do fundo para o topo. No referencial horizontal do backend,
+    // o fundo do canvas vertical deve ser o primeiro terço (defensivo).
+    const mapPoint = (p) => {
+      if (!isVertical) return p;
+      const newLeft = canvas.height - p.top;
+      const newTop = p.left;
+      return { ...p, left: newLeft, top: newTop };
+    };
+
     const possession = typeof getCurrentPossession === "function"
       ? getCurrentPossession()
       : "verde";
@@ -928,19 +1549,35 @@ async function sendVisionTactic() {
 
     const green = getGuaraniPositions();
     const black = getOpponentPositions();
+    const greenMapped = green.map(mapPoint);
+    const blackMapped = black.map(mapPoint);
+    const ballMapped = ball ? mapPoint(ball) : null;
 
-    const res = await fetch("https://guaranifc.onrender.com/ai/vision-tactic", {
+    const res = await fetch(`${AI_API_BASE}/ai/vision-tactic`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fieldImage, possession, ball, green, black, tacticalRoles: circleTacticalState })
+      body: JSON.stringify({
+        fieldImage,
+        possession,
+        ball: ballMapped,
+        green: greenMapped,
+        black: blackMapped,
+        tacticalRoles: circleTacticalState,
+        orientation: isVertical ? "vertical-rotated-90" : "horizontal"
+      })
     });
 
     const data = await res.json();
     console.log("📊 Visão Tática (backend):", data);
 
+    // O backend continua usando a base horizontal 600 × 300. Converte a
+    // formação recomendada para o canvas vertical antes de desenhá-la:
+    // horizontal (x, y) -> vertical (y, 600 - x), isto é, 90° anti-horário.
+    const greenVertical = orientBackendFormationTopBottom(data.green, canvas);
+
     // 🟡 SALVAR POSIÇÕES DO TIME ADVERSÁRIO PRA DEBUG VISUAL
 	window.lastBlackPositions = black;  // black já está pegado antes no código
-	
+
 	// 🧪 🔍 DEBUG VISUAL — marca clusters, setores e zaga detectada
 	if (typeof debugVisual === "function") {
 	console.log("🔍 Debug Visual ativado com lastBlackPositions");
@@ -950,11 +1587,11 @@ async function sendVisionTactic() {
 	}
 
     // ✅ Move o Verde pela visão da IA
-    if (Array.isArray(data.green) && data.green.length > 0) {
-      animateTeam("circle", data.green);
+    if (greenVertical.length > 0) {
+      animateTeam("circle", greenVertical);
 
       applyDynamicBlocks(
-        data.green,
+        greenVertical,
         data.phase?.toLowerCase() || "defesa",
         data.opponentFormation || "4-4-2"
       );
@@ -975,11 +1612,9 @@ async function sendVisionTactic() {
     window.getOpponentPositions = getOpponentPositions;
 
 
-// Garantir que notify é global sem depender de variável local
+    // Garantir que notify é global
 if (typeof window !== "undefined") {
-  if (typeof window.notify !== "function" && typeof window.notifyTop === "function") {
-    window.notify = window.notifyTop;
-  }
+  window.notify = window.notify || window.notifyTop;
 }
 
 
@@ -989,24 +1624,6 @@ if (typeof window !== "undefined") {
   if (typeof getGuaraniPositions === "function")  window.getGuaraniPositions  = getGuaraniPositions;
   if (typeof analyzeFormation === "function")     window.analyzeFormation     = analyzeFormation;
   if (typeof detectEloFormation === "function")   window.detectEloFormation  = detectEloFormation;
-  window.circleTacticalState = circleTacticalState;
-  window.circleOriginalNumber = circleOriginalNumber;
 
   console.log("⚡ Funções IA disponíveis para o front-end");
-}
-
-// MOVIMENTAR TIME VERDE (RESPONDER NO CAMPO)
-function applyGreenPositions(greenAI) {
-  greenAI.forEach(p => {
-    const el = document.getElementById("circle" + p.id);
-    if (el) {
-      el.style.left = p.left + "px";
-      el.style.top  = p.top  + "px";
-    }
-  });
-}
-
-// ❌ BLOQUEADO DEFINITIVAMENTE
-function showCoachComment(text) {
-  console.log("🧠 coachComment BLOQUEADO:", text);
 }

@@ -102,30 +102,14 @@
   <div id="circle23" class="circle">01</div>
   <div id="circle24" class="circle" style="left:288px;top:130px;z-index:12000;background-image: url('img/adidasball.jpg');"></div>
   </div>
-  <canvas id="trace-canvas" width="600" height="300"
+  <canvas id="trace-canvas" width="300" height="600"
    style="position:absolute;left:20px;top:20px;z-index:10;border-radius:8px;background:transparent;"></canvas>
 
  <div id="ai-notification" style="display:none;position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:#33aaff;color:#fff;padding:18px 32px;border-radius:8px;z-index:10001;font-size:1.1em;box-shadow:0 2px 10px rgba(0,0,0,0.18);"></div>
 
 <!-- Botões -->
-<div id="fullscreen-overlay"
-  style="position:fixed;left:0;top:0;width:100vw;height:100vh;
-         background:rgba(0,0,0,0.7);color:#fff;display:flex;
-         align-items:center;justify-content:center;z-index:10055;
-         font-size:2em;cursor:pointer;">
-  Toque para entrar na Mesa Tática
-</div>
-
-<button id="exit-fullscreen-btn" class="force-bottom"
-  style="position:fixed;top:323px;left:383px;z-index:10000;
-         font-size:0.7em;padding:8px 16px;border-radius:8px;
-         background:red;color:#fff;border:none;cursor:pointer;
-         box-shadow:0 2px 6px rgba(0,0,0,0.15);">
-  x
-</button>
-
 <button id="ai-analise-btn" class="force-bottom"
-  style="position:fixed;top:323px;left:153px;z-index:10000;
+  style="position:fixed;bottom:100px;left:153px;z-index:10000;
          font-size:0.7em;padding:8px 16px;border-radius:8px;
          background:#1E90FF;color:#fff;border:none;cursor:pointer;
          box-shadow:0 2px 6px rgba(0,0,0,0.15);">
@@ -133,7 +117,7 @@
 </button>
 
 <button id="pen-path-btn" class="force-bottom"
-  style="position:fixed;top:323px;left:63px;z-index:10000;
+  style="position:fixed;bottom:100px;left:63px;z-index:10000;
          font-size:0.7em;padding:8px 16px;border-radius:8px;
          background:#222;color:#fff;border:none;cursor:pointer;
          box-shadow:0 2px 6px rgba(0,0,0,0.15);">
@@ -142,25 +126,16 @@
 
 
 <button id="treino-btn" class="force-bottom"
-  style="position:fixed;top:323px;left:237px;z-index:10000;
+  style="position:fixed;bottom:100px;left:237px;z-index:10000;
          font-size:0.7em;padding:8px 16px;border-radius:8px;
          background:#28a745;color:#fff;border:none;cursor:pointer;
          box-shadow:0 2px 6px rgba(0,0,0,0.15);">
    Treino
 </button>
 
-<a href="https://www.osinvictos.com.br" id="btn-home"
-  style="position:fixed;top:323px;left:20px;z-index:10000;
-         font-size:0.6em;padding:8px 16px;border-radius:8px;
-         background:#222;color:#ffffff;text-decoration:none;
-         border:none;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15);
-         display:flex;align-items:center;justify-content:center;">
-  ⌂
-</a>
-
 
 <button id="btn-criar-campo"
-  style="position:fixed;top:323px;left:303px;z-index:10000;
+  style="position:fixed;bottom:100px;left:303px;z-index:10000;
         font-size:0.7em;padding:8px 16px;border-radius:8px;
         background:#007bff;color:#fff;border:none;cursor:pointer;
         box-shadow:0 2px 6px rgba(0,0,0,0.15);">
@@ -236,7 +211,6 @@
 <script src="js/sheenpath.js"></script>
 <script src="js/core.js" defer></script> 
 <script src="js/aitatica.js" defer></script>
-<script src="js/fullscreen.js"></script>
 <script src="js/desenhotatico.js"></script>
 <script src="js/chat.js"></script>
 

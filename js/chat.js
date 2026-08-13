@@ -23,6 +23,7 @@ const DEFAULT_CHAT_STYLE = {
 
 function dockChat() {
   Object.assign(coachChat.style, DEFAULT_CHAT_STYLE);
+  coachChat.style.zIndex = "2147483647";
   chatBody.style.display = "block";
   chatInputArea.style.display = "flex";
   chatOpen = true;
@@ -44,6 +45,9 @@ function openChat() {
 
 function minimizeChat() {
   coachChat.style.height = "48px";     // apenas cabeçalho
+  // No celular os botões ficam no rodapé. O chat minimizado não pode ficar
+  // acima deles e capturar todos os toques.
+  coachChat.style.zIndex = "9000";
   chatBody.style.display = "none";      // esconde histórico
   chatInputArea.style.display = "none"; // esconde input
   chatOpen = false;

@@ -61,18 +61,18 @@
             position: absolute;
             left: 20px;
             top: 20px;
-            width: 600px;
-            height: 300px;
+            width: 340px;
+            height: 550px;
             background: #16c516;
             z-index: 0;
             border-radius: 8px;
         }
-        #background-line { /* Linha superior */
+        #background-line { /* Linha esquerda */
             position: absolute;
             left: 22px;
             top: 22px;
-            width: 596px;
-            height: 2px;
+            width: 2px;
+            height: 545px;
             background: #fff;
             z-index: 0;
             border-radius: 1px;
@@ -81,31 +81,31 @@
         #background-line2 { /* Linha inferior */
             position: absolute;
             left: 22px;
-            top: 316px;
-            width: 596px;
+            top: 566px;
+            width: 335px;
             height: 2px;
             background: #fff;
             z-index: 0;
             border-radius: 1px;
             pointer-events: none;
         }
-        #background-line3 { /* Linha esquerda*/
+        #background-line3 { /* Linha direita*/
             position: absolute;
-            left: 22px;
+            left: 357px;
             top: 22px;
             width: 2px;
-            height: 296px;
+            height: 545px;
             background: #fff;
             z-index: 0;
             border-radius: 1px;
             pointer-events: none;
         }
-        #background-line4 { /* Linha direita */
+        #background-line4 { /* Linha superior */
             position: absolute;
-            left: 616px;
+            left: 22px;
             top: 22px;
-            width: 2px;
-            height: 296px;
+            width: 335px;
+            height: 2px;
             background: #fff;
             z-index: 0;
             border-radius: 1px;
@@ -113,30 +113,30 @@
         }
         #background-line5 { /* Linha central */
             position: absolute;
-            left: 308px;
-            top: 22px;
-            width: 2px;
-            height: 296px;
+            left: 22px;
+            top: 293px;
+            width: 335px;
+            height: 2px;
             background: #fff;
             z-index: 0;
             border-radius: 1px;
             pointer-events: none;
         }
-        #background-line6 { /* Linha grande Área direita */
+        #background-line6 { /* Linha grande Área superior topo */
             position: absolute;
-            left: 88px;
-            top: 97px;
+            left: 184px;
+            top: 5px;
             width: 2px;
-            height: 150px;
+            height: 165px;
             background: #fff;
             z-index: 0;
             border-radius: 1px;
             pointer-events: none;
         }
-        #background-line7 { /* Linha Pequena Área direita */
+        #background-line7 { /* Linha Pequena Área superior topo */
             position: absolute;
-            left: 58px;
-            top: 120px;
+            left: 185px;
+            top: 9px;
             width: 2px;
             height: 102px;
             background: #fff;
@@ -146,8 +146,8 @@
         }
         #background-line8 {
             position: absolute;
-            left: 22px;
-            top: 120px; /* Linha Pequena Área superior*/
+            left: 219px;
+            top: 40px; /* Linha Pequena Área direita topo*/
             width: 36px;
             height: 2px;
             background: #fff;
@@ -157,8 +157,8 @@
         }
         #background-line9 {
             position: absolute;
-            left: 22px;
-            top: 220px; /* Linha Pequena Área inferior*/
+            left: 216px;
+            top: 547px; /* Linha Pequena Área direita baixa*/
             width: 36px;
             height: 2px;
             background: #fff;
@@ -168,8 +168,8 @@
         }
         #background-line10 {
             position: absolute;
-            left: 552px;
-            top: 97px; /* Linha Grande Área superior*/
+            left: 235px;
+            top: 55px; /* Linha Grande Área direita topo*/
             width: 66px;
             height: 2px;
             background: #fff;
@@ -179,8 +179,8 @@
         }
         #background-line11 {
             position: absolute;
-            left: 22px;
-            top: 245px; /* Linha Grande Área inferior*/
+            left: 235px;
+            top: 534px; /* Linha Grande Área direita baixa*/
             width: 66px;
             height: 2px;
             background: #fff;
@@ -188,21 +188,21 @@
             border-radius: 1px;
             pointer-events: none;
         }
-        #background-line12{ /* Linha grande Área direita */
+        #background-line12{ /* Linha grande Área superior baixa */
             position: absolute;
-            left: 550px;
-            top: 97px;
+            left: 184px;
+            top: 420px;
             width: 2px;
-            height: 150px;
+            height: 165px;
             background: #fff;
             z-index: 0;
             border-radius: 1px;
             pointer-events: none;
         }
-        #background-line13 { /* Linha Pequena Área direita */
+        #background-line13 { /* Linha Pequena Área superior baixa */
             position: absolute;
-            left: 580px;
-            top: 120px;
+            left: 183px;
+            top: 480px;
             width: 2px;
             height: 102px;
             background: #fff;
@@ -212,8 +212,8 @@
         }
         #background-line14 {
             position: absolute;
-            left: 582px;
-            top: 120px; /* Linha Pequena Área superior*/
+            left: 118px;
+            top: 40px; /* Linha Pequena Área esquerda topo*/
             width: 36px;
             height: 2px;
             background: #fff;
@@ -223,8 +223,8 @@
         }
         #background-line15 {
             position: absolute;
-            left: 582px;
-            top: 220px; /* Linha Pequena Área inferior*/
+            left: 116px;
+            top: 547px; /* Linha Pequena Área esquerda baixa*/
             width: 36px;
             height: 2px;
             background: #fff;
@@ -234,8 +234,8 @@
         }
         #background-line16 {
             position: absolute;
-            left: 22px;
-            top: 97px; /* Linha Grande Área superior*/
+            left: 70px;
+            top: 535px; /* Linha Grande Área esquerda baixa*/
             width: 66px;
             height: 2px;
             background: #fff;
@@ -245,8 +245,8 @@
         }
         #background-line17 {
             position: absolute;
-            left: 552px;
-            top: 245px; /* Linha Grande Área inferior*/
+            left: 70px;
+            top: 55px; /* Linha Grande Área esquerda topo*/
             width: 66px;
             height: 2px;
             background: #fff;
@@ -254,38 +254,54 @@
             border-radius: 1px;
             pointer-events: none;
         }
+        /* Rotate 90deg all lines that belong to Pequena Área and Grande Área */
+        #background-line6,
+        #background-line7,
+        #background-line8,
+        #background-line9,
+        #background-line10,
+        #background-line11,
+        #background-line12,
+        #background-line13,
+        #background-line14,
+        #background-line15,
+        #background-line16,
+        #background-line17 {
+          transform: rotate(90deg);
+          transform-origin: center center;
+        }
         .gol-square {
             position: absolute;
-            left: 10px;  /* Adjust to place the square under the circles */
-            top: 135px;
+            left: 180px;  /* Adjust to place the square under the circles */
+            top: 535px;
             width: 10px;
             height: 70px;
             background: #ffffff;
-            z-index: 0;
+            z-index: 10080;
             border-radius: 8px;
+            transform: rotate(90deg);
         }
         .gol2-square {
             position: absolute;
-            left: 620px;  /* Adjust to place the square under the circles */
-            top: 135px;
+            left: 180px;  /* Adjust to place the square under the circles */
+            top: -15px;
             width: 10px;
             height: 70px;
             background: #ffffff;
-            z-index: 0;
+            z-index: 10080;
             border-radius: 8px;
+            transform: rotate(90deg);
         }
         .circlecentral {
-            width: 140px; height: 140px;
-            background: #33aaff; border-radius: 50%;
-            position: absolute;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #fff;
-            font-weight: bold;
-            font-family: sans-serif;
-            font-size: 14px;
-            user-select: none;
+              position: absolute;
+              width: 140px; height: 140px;
+              border-radius: 50%;
+              left: 120px !important;
+              top: 223px !important;
+              z-index: 1000;
+              display: flex;
+              color: #fff;
+              user-select: none;
         }
         
 		#room-user-indicator {
@@ -348,26 +364,26 @@
 }
 		
 		/* GOLEIRO */
-		#circle1  { left:  25px; top: 160px; background:#FFFFFF; color:green; }
-	
-		/* DEFESA (linha de 4) */
-		#circle2  { left: 70px; top:  50px; background:#FFFFFF; color:green; } /* lateral esquerdo */
-		#circle3  { left: 70px; top: 120px; background:#FFFFFF; color:green; } /* zagueiro esquerdo */
-		#circle4  { left: 70px; top: 190px; background:#FFFFFF; color:green; } /* zagueiro direito */
-		#circle5  { left: 70px; top: 260px; background:#FFFFFF; color:green; } /* lateral direito */
+#circle1  { left: 180px; top: 520px; background:#c78c00; color:green; z-index: 10100; }
 
-		/* MEIO (triângulo 3) */
-		#circle6  { left: 140px; top: 160px; background:#FFFFFF; color:green; } /* volante (6) */
-		#circle7  { left: 160px; top: 90px; background:#FFFFFF; color:green; } /* meia esquerda (8) */
-		#circle8  { left: 160px; top: 230px; background:#FFFFFF; color:green; } /* meia direita (10) */
+/* DEFESA (linha de 4) */
+#circle2  { left: 60px;  top: 480px; background:#FFFFFF; color:green; z-index: 10090; }
+#circle3  { left: 140px; top: 480px; background:#FFFFFF; color:green; z-index: 10090; }
+#circle4  { left: 220px; top: 480px; background:#FFFFFF; color:green; z-index: 10090; }
+#circle5  { left: 300px; top: 480px; background:#FFFFFF; color:green; z-index: 10090; }
 
-		/* ATAQUE (linha de 3) */
-		#circle9  { left: 250px; top: 70px; background:#FFFFFF; color:green; } /* ponta esquerda (11) */
-		#circle10 { left: 270px; top: 160px; background:#FFFFFF; color:green; } /* centroavante (9) */
-		#circle11 { left: 250px; top: 250px; background:#FFFFFF; color:green; } /* ponta direita (7) */
+/* MEIO (linha em triângulo) */
+#circle6  { left: 160px; top: 320px; background:#FFFFFF; color:green; z-index: 10080; }
+#circle7  { left: 120px; top: 320px; background:#FFFFFF; color:green; z-index: 10080; }
+#circle8  { left: 200px; top: 320px; background:#FFFFFF; color:green; z-index: 10080; }
 
-        #circle23 { left: 600px; top: 150px; background: #660000; }
-        #circle24 { left: 420px; top: 40px; background: #ffffff; }
+/* ATAQUE (linha em triângulo) */
+#circle9  { left: 100px; top: 100px; background:#FFFFFF; color:green; z-index: 10070; }
+#circle10 { left: 160px; top: 200px; background:#FFFFFF; color:green; z-index: 10070; }
+#circle11 { left: 220px; top: 100px; background:#FFFFFF; color:green; z-index: 10070; }
+ 
+#circle24 { left: 420px; top: 40px; background: #ffffff; z-index: 10070;}
+
 
         html, body {
           margin: 0;

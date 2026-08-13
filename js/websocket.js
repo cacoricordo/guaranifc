@@ -1,4 +1,8 @@
-const socket = io("https://guaranifc.onrender.com", {
+const socketServer = ["localhost", "127.0.0.1"].includes(location.hostname)
+  ? location.origin
+  : "https://guaranifc.onrender.com";
+
+const socket = io(socketServer, {
   transports: ["websocket"],   //  fix --force; força WS, evita polling
   secure: true,
   reconnection: true
@@ -133,5 +137,4 @@ socket.on("supertrunfo-result", (data) => {
   `;
   alert(msg);
 });
-
 

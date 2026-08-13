@@ -6,14 +6,18 @@
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
 
+  // O canvas cobre o campo inteiro; só recebe toque depois de ativar a caneta.
+  canvas.style.pointerEvents = "none";
+
   // Faz o canvas ocupar um tamanho CSS estável (se quiser, ajuste aqui)
   // Se preferir que o canvas seja responsivo, ajuste o CSS; aqui usamos o rect atual.
   function resizeCanvasForDisplay() {
     const ratio = window.devicePixelRatio || 1;
-    // pega o tamanho CSS real do canvas (dependendo do layout)
-    const rect = canvas.getBoundingClientRect();
+    // Mantém o desenho exatamente sobre o gramado, inclusive no layout vertical.
+    const field = document.getElementById("background-square");
+    const rect = field ? field.getBoundingClientRect() : canvas.getBoundingClientRect();
 
-    // forçar CSS width/height para o tamanho do rect (garante consistência)
+    // forçar CSS width/height para o tamanho do campo (garante consistência)
     canvas.style.width = rect.width + "px";
     canvas.style.height = rect.height + "px";
 

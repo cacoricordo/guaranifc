@@ -57,8 +57,8 @@ console.log("🔌 socket.io conectado?", window.socket.connected);
 
 // Conexão INVICTO/Supabase
 const supabase = createClient(
-  "https://pwaipoabevlfflqnqiqq.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3YWlwb2FiZXZsZmZscW5xaXFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2OTY3MTksImV4cCI6MjA3ODI3MjcxOX0.14SjVGvcsd4Uta-78t_nPkSSdnhOfuynct7Lh3Jqg64"
+  "https://twzujajyxcsffuumkbwd.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3enVqYWp5eGNzZmZ1dW1rYndkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3Mjk3NTcsImV4cCI6MjEwMjMwNTc1N30.3eeb9tVVJKG_c8w_rIoigtvtjy_rQmkkGuyuBn23GF4"
 );
 
 let iaListenerAdded = false;
@@ -633,13 +633,16 @@ $rkSave?.addEventListener("click", async () => {
     return;
   }
 
-  let { data: authUser, error: authError } = await supabase.auth.signInWithPassword({
+  let { data: authData, error: authError } = await supabase.auth.signInWithPassword({
     email,
     password: pass,
   });
 
-  if (authError?.message === "Invalid login credentials") {
-    let { data: newUser, error: signupError } = await supabase.auth.signUp({
+  const invalidCredentials = authError?.code === "invalid_credentials" ||
+    authError?.message === "Invalid login credentials";
+
+  if (invalidCredentials) {
+    const { data: signupData, error: signupError } = await supabase.auth.signUp({
       email,
       password: pass,
     });
@@ -650,18 +653,30 @@ $rkSave?.addEventListener("click", async () => {
       return;
     }
 
-    authUser = newUser;
+    authData = signupData;
+  } else if (authError) {
+    notifyTop("Não foi possível autenticar sua conta.");
+    console.error(authError);
+    return;
   }
 
-  // 3) grava score no ranking
+  // Com confirmação de e-mail habilitada, o cadastro não cria uma sessão
+  // imediatamente. Sem sessão, as regras RLS impedem a gravação corretamente.
+  if (!authData?.session || !authData?.user?.id) {
+    notifyTop("Confirme seu e-mail e entre novamente para salvar no ranking.");
+    return;
+  }
+
+  // 3) grava a própria pontuação; o user_id é validado pelas políticas RLS.
   const { error: insertError } = await supabase
     .from("ranking")
     .upsert({
+      user_id: authData.user.id,
       name,
       email,
       points: window.state.points,
       goals: window.state.goals
-    });
+    }, { onConflict: "user_id" });
 
   if (insertError) {
     notifyTop("Erro ao salvar no ranking.");
@@ -808,4 +823,3 @@ window.pickLevel1Mission = function () {
   const level1 = ["4-3-3","4-4-2","3-5-2"];
   return level1[Math.floor(Math.random() * level1.length)];
 };
-

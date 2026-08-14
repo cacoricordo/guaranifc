@@ -23,7 +23,7 @@ const DEFAULT_CHAT_STYLE = {
 
 function dockChat() {
   Object.assign(coachChat.style, DEFAULT_CHAT_STYLE);
-  coachChat.style.zIndex = "2147483647";
+  coachChat.style.zIndex = "2147483646";
   chatBody.style.display = "block";
   chatInputArea.style.display = "flex";
   chatOpen = true;
@@ -109,6 +109,10 @@ chatSend.addEventListener("click", async () => {
     // ⚽ Se a Biblioteca C.A.Silva retornou uma formação, monta imediatamente (sem esperar IA)
     if (data.formationRequested) {
       console.log("⚽ Comando tático do chat:", data.formationRequested);
+
+      // Libera a visualização do campo antes de iniciar a animação da formação.
+      // A resposta continua no histórico e pode ser vista ao reabrir o chat.
+      minimizeChat();
       window.dispatchEvent(new CustomEvent("coach:help-requested"));
 
       // 🔧 Normaliza a formação

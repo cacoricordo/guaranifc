@@ -18,7 +18,7 @@ criarCampoBtn.addEventListener("click", (e) => {
   window.currentRoomCode = pin;
   input.value = pin;
 
-  const msg = `https://www.osinvictos.com.br/dashboard/guaranifc/ <br>PIN para entrar na Mesa Tática 👇\n\n🔐 Código: *${pin}*`;
+  const msg = `https://gfc.invicto.ind.br/ <br>PIN para entrar na Mesa Tática 👇\n\n🔐 Código: *${pin}*`;
   shareBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
 
   modal.style.display = "flex";

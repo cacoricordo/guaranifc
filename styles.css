@@ -588,7 +588,7 @@
   color: #fff;
   font-size: 26px;
   cursor: pointer;
-  z-index: 20000;
+  z-index: 2147483647;
   transition: transform 0.3s, background 0.3s;
   box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
@@ -649,7 +649,7 @@
   display: flex;
   flex-direction: column;
   height: 70vh;
-  z-index: 2147483647 !important;
+  z-index: 2147483646 !important;
   transition: all 0.3s ease;
 }
 

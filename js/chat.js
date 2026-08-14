@@ -67,6 +67,31 @@ chatHeader.addEventListener("click", () => {
 // ----------------------------------------------------
 const url_render = 'https://guaranifc.onrender.com';
 
+// O chat é carregado antes dos scripts com `defer`. Aguarda o catálogo de
+// formações e o motor de transição para que comandos feitos logo ao entrar
+// na página sejam executados, sem depender do botão Análise IA.
+function waitForTacticalCommandReady(timeoutMs = 10000) {
+  const isReady = () => (
+    Boolean(window.FORMATIONS) &&
+    typeof window.animateFormationTransition === "function"
+  );
+
+  if (isReady()) return Promise.resolve(true);
+
+  return new Promise(resolve => {
+    const interval = setInterval(() => {
+      if (isReady()) finish(true);
+    }, 50);
+    const timeout = setTimeout(() => finish(false), timeoutMs);
+
+    function finish(ready) {
+      clearInterval(interval);
+      clearTimeout(timeout);
+      resolve(ready);
+    }
+  });
+}
+
 function appendMessage(sender, text) {
   const msg = document.createElement("div");
   msg.style.marginBottom = "8px";
@@ -113,6 +138,13 @@ chatSend.addEventListener("click", async () => {
       // Libera a visualização do campo antes de iniciar a animação da formação.
       // A resposta continua no histórico e pode ser vista ao reabrir o chat.
       minimizeChat();
+
+      const tacticalReady = await waitForTacticalCommandReady();
+      if (!tacticalReady) {
+        appendMessage("bot", "A mesa tática ainda está sendo preparada. Tente novamente em instantes.");
+        return;
+      }
+
       window.dispatchEvent(new CustomEvent("coach:help-requested"));
 
       // 🔧 Normaliza a formação

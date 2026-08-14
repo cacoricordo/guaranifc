@@ -860,7 +860,7 @@ function orientBackendFormationTopBottom(players, canvasEl = document.getElement
  * Anima a transição entre duas formações (ex: 4-4-2 → 4-3-3)
  * usando uma curva Sheen & Ghain (ش غ).
  */
-function animateFormationTransition(prefix, fromFormation, toFormation, phase = "transicao", mode = "match") {
+function animateFormationTransition(prefix, fromFormation, toFormation, phase = "transicao", mode = "match", onComplete) {
   const canvas = document.getElementById("trace-canvas");
   const rect = canvas?.getBoundingClientRect();
   if (!rect) return;
@@ -895,6 +895,11 @@ function animateFormationTransition(prefix, fromFormation, toFormation, phase = 
     const point = sheenPath[frame];
     if (!point) {
       clearInterval(interval);
+      // Garante que a animação termina exatamente no desenho solicitado.
+      toOriented.forEach(player => {
+        moveElement(player.id, player.prefferedZone[0], player.prefferedZone[1]);
+      });
+      onComplete?.();
       return;
     }
 

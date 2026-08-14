@@ -124,15 +124,11 @@ chatSend.addEventListener("click", async () => {
 
       const formationBase = window.FORMATIONS?.[formationKey];
       if (formationBase && Array.isArray(formationBase)) {
-        const formationPositions = formationBase.map(p => ({
-          id: p.id,
-          left: (p.prefferedZone && p.prefferedZone[0]) || (p.left ?? 300),
-          top:  (p.prefferedZone && p.prefferedZone[1]) || (p.top  ?? 150)
-        }));
+        const previousFormation = window.FORMATIONS?.[window.lastFormation] || formationBase;
 
-        // Monta direto o time no campo, mesmo sem IA
-        console.log("🚀 Montando formação inicial (sem IA):", formationKey);
-        animateTeam("circle", formationPositions);
+        // A transição termina com cada atleta fixado na zona do esquema pedido.
+        console.log("🚀 Montando e fixando formação solicitada:", formationKey);
+        animateFormationTransition("circle", previousFormation, formationBase, "transicao", "chat");
         const hud = document.getElementById("hud-formations");
         if (hud) hud.innerText = `Guarani FC: ${formationKey}`;
         window.lastFormation = formationKey;
@@ -147,59 +143,14 @@ chatSend.addEventListener("click", async () => {
           possession: "vermelho",
           opponentFormationVision: null
         })
-      })
+        })
         .then(r => r.json())
         .then(result => {
-          const field = document.getElementById("background-square");
-          if (field) {
-            document.body.style.pointerEvents = "none";
-            field.style.transition = "opacity 0.3s ease";
-            field.style.opacity = "0.8";
-          }
-
-          // Verifica formações válidas
-          const formationBaseAI = window.FORMATIONS?.[formationKey];
-          const formationPositionsAI = (formationBaseAI || []).map(p => ({
-            id: p.id,
-            left: (p.prefferedZone && p.prefferedZone[0]) || (p.left ?? 300),
-            top:  (p.prefferedZone && p.prefferedZone[1]) || (p.top  ?? 150)
-          }));
-
-          const prevKey = window.lastFormation || null;
-          const anyCircle = document.querySelector("#circle13, #circle14, #circle15, #circle16, #circle17, #circle18, #circle19, #circle20, #circle21, #circle22");
-
-          if (!anyCircle || !prevKey) {
-            console.log("🚀 Nenhum time ativo. IA montando:", formationKey);
-            animateTeam("circle", formationPositionsAI);
-          } else {
-            try {
-              console.log(`🔄 IA: ${prevKey} → ${formationKey}`);
-              animateFormationTransition(
-                "circle",
-                window.FORMATIONS[prevKey],
-                window.FORMATIONS[formationKey],
-                (result.phase || "transicao").toLowerCase()
-              );
-            } catch (err) {
-              console.warn("⚠️ animateFormationTransition falhou:", err);
-              animateTeam("circle", formationPositionsAI);
-            }
-          }
-
-          // Aplica blocos dinâmicos
-          const phase = (result.phase || "transicao").toLowerCase();
-          applyDynamicBlocks(formationPositionsAI, phase, result.opponentFormation || "4-4-2");
-
-          // Atualiza HUD
+          // O comando manual é prioritário: a análise atualiza apenas o HUD,
+          // sem deslocar novamente o time para outro bloco tático.
           const hud = document.getElementById("hud-formations");
           if (hud) hud.innerText = `Adversário: ${result.opponentFormation || "?"} | Guarani FC: ${formationKey}`;
           window.lastFormation = formationKey;
-
-          // Libera campo
-          setTimeout(() => {
-            if (field) field.style.opacity = "1";
-            document.body.style.pointerEvents = "auto";
-          }, 500);
         })
         .catch(e => {
           appendMessage("bot", "Erro de comunicação com a Biblioteca C.A.Silva.");

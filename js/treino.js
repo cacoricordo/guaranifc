@@ -533,7 +533,7 @@ function showNextMissionPopup() {
     align-items:center;
     justify-content:center;
     flex-direction:column;
-    z-index:200001;
+    z-index:2147483647;
     backdrop-filter: blur(4px);
     color:white;
     font-size:1.6em;

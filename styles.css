@@ -706,7 +706,7 @@
   left: 50%;
   top: 50%;  
   transform: translate(-50%, -50%);
-  z-index: 200000;
+  z-index: 2147483647; /* mantém os pop-ups de treino acima do chatbot */
   max-width: 90vw;
   max-height: 90vh;
   display: flex;

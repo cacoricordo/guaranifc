@@ -105,6 +105,8 @@ let iaListenerAdded = false;
   function notifyTop(msg, ms=7200){
     const n = document.getElementById("ai-notification");
     if (!n) return alert(msg);
+    // Os avisos durante uma missão precisam ficar acima do chat aberto.
+    n.style.zIndex = window.state?.active ? "2147483647" : "";
     n.textContent = msg;
     n.style.display = "block";
     clearTimeout(n._t);

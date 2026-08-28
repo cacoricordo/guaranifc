@@ -1150,7 +1150,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile", // 🔥 rápido e gratuito
+      model: process.env.GROQ_MODEL || "openai/gpt-oss-20b",
       temperature: 0.8,
       messages: [
         {
